@@ -1,0 +1,1072 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0F6E56">
+<title>AJ — Daily Protocol</title>
+<style>
+:root{
+  --teal:#0F6E56;--tealL:#E1F5EE;--tealM:#1D9E75;--tealT:#5DCAA5;
+  --amber:#854F0B;--amberL:#FAEEDA;--amberM:#EF9F27;
+  --red:#A32D2D;--redL:#FCEBEB;--redM:#E24B4A;
+  --blue:#185FA5;--blueL:#E6F1FB;--blueM:#378ADD;
+  --purple:#534AB7;--purpleL:#EEEDFE;
+  --gray:#F1EFE8;--grayM:#D3D1C7;--muted:#888780;
+  --dark:#2C2C2A;--card:#fff;--bg:#f4f3f0;--bdr:rgba(0,0,0,.09);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--dark);overscroll-behavior:none;padding-bottom:80px}
+.hdr{background:var(--teal);color:#fff;padding:14px 16px 0;position:sticky;top:0;z-index:200}
+.hdr.travel{background:var(--blue)}
+.hdr-row{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px}
+.dayname{font-size:24px;font-weight:700}
+.datestr{font-size:12px;opacity:.7;margin-top:2px}
+.daytype{display:inline-block;background:rgba(255,255,255,.2);font-size:11px;padding:2px 9px;border-radius:10px;margin-top:5px}
+.travel-badge{display:inline-block;background:rgba(255,255,255,.3);font-size:11px;padding:2px 9px;border-radius:10px;margin-top:5px;margin-left:5px;font-weight:600}
+.pct-num{font-size:24px;font-weight:700;text-align:right}
+.pct-lbl{font-size:11px;opacity:.7;text-align:right}
+.prog-lbl{font-size:11px;opacity:.7;margin-bottom:3px}
+.prog-bar{height:4px;background:rgba(255,255,255,.25);border-radius:2px;overflow:hidden;margin-bottom:8px}
+.prog-fill{height:100%;background:#fff;border-radius:2px;transition:width .4s}
+.daynav{display:flex;gap:5px;overflow-x:auto;padding:8px 16px 10px;background:inherit;scrollbar-width:none}
+.daynav::-webkit-scrollbar{display:none}
+.dpill{flex-shrink:0;padding:5px 13px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;background:rgba(255,255,255,.15);color:#fff;border:none;position:relative}
+.dpill.active{background:#fff;color:var(--teal)}
+.hdr.travel .dpill.active{color:var(--blue)}
+.dpill.istoday{box-shadow:0 0 0 1.5px rgba(255,255,255,.5)}
+.dpill .tmark{position:absolute;top:-2px;right:-2px;width:8px;height:8px;border-radius:50%;background:#FAC775;border:1px solid #fff}
+.content{padding:12px 14px}
+.tblock{margin-bottom:14px}
+.tpill-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px}
+.tpill{display:inline-block;font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px;color:#fff;background:var(--teal);cursor:pointer;user-select:none}
+.tpill.amber{background:var(--amber)}
+.tpill.purple{background:var(--purple)}
+.tpill.gray{background:var(--muted)}
+.tpill.blue{background:var(--blue)}
+.tpill-count{font-size:10px;color:var(--muted);background:var(--gray);padding:2px 8px;border-radius:10px}
+.supp-group{display:none}.supp-group.open{display:block}
+.item{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-radius:10px;background:var(--card);border:1px solid var(--bdr);margin-bottom:5px;cursor:pointer;user-select:none;transition:all .12s;position:relative}
+.item:active{transform:scale(.98)}
+.item.done{background:var(--tealL);border-color:var(--tealT)}
+.item.done .iname{color:var(--teal);text-decoration:line-through;text-decoration-color:var(--tealT)}
+.item.done .idose{color:var(--tealM)}
+.item.done .chk{background:var(--tealM);border-color:var(--tealM)}
+.chk{width:20px;height:20px;border-radius:5px;border:2px solid var(--grayM);flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;transition:all .12s}
+.ibody{flex:1;min-width:0}
+.iname{font-size:13px;font-weight:700;color:var(--dark);line-height:1.3}
+.idose{font-size:12px;color:var(--muted);margin-top:2px;line-height:1.4}
+.inote{font-size:11px;padding:4px 8px;border-radius:6px;margin-top:5px;line-height:1.5}
+.inote.teal{color:var(--teal);background:var(--tealL)}
+.inote.amber{color:var(--amber);background:var(--amberL)}
+.inote.blue{color:var(--blue);background:var(--blueL)}
+.tag{font-size:10px;padding:1px 6px;border-radius:5px;font-weight:700;margin-left:4px;display:inline-block;vertical-align:middle}
+.tnew{background:var(--blueL);color:var(--blue)}
+.trx{background:var(--purpleL);color:var(--purple)}
+.tfreq{background:var(--amberL);color:var(--amber)}
+.ttravel{background:var(--blueL);color:var(--blue)}
+.tcustom{background:var(--blueL);color:var(--blue)}
+.days-left{font-size:10px;padding:1px 7px;border-radius:8px;background:var(--amberL);color:var(--amber);font-weight:700;margin-left:5px}
+.del-btn{position:absolute;top:9px;right:9px;width:22px;height:22px;border-radius:50%;background:var(--redL);color:var(--redM);border:none;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center}
+.meal-card{background:var(--card);border:1px solid var(--bdr);border-radius:12px;overflow:hidden;margin-bottom:5px}
+.meal-hdr{display:flex;align-items:center;gap:10px;padding:10px 13px;cursor:pointer;background:var(--gray)}
+.meal-dot{width:9px;height:9px;border-radius:50%;background:var(--tealM);flex-shrink:0}
+.meal-name{font-size:13px;font-weight:700;flex:1}
+.meal-chev{font-size:15px;color:var(--muted);transition:transform .2s}
+.meal-chev.open{transform:rotate(180deg)}
+.meal-body{display:none;padding:10px 13px;border-top:1px solid var(--gray)}
+.meal-body.open{display:block}
+.meal-item{font-size:12px;padding:4px 0;border-bottom:1px solid var(--gray);display:flex;gap:6px;line-height:1.4}
+.meal-item:last-child{border-bottom:none}
+.meal-dot2{width:5px;height:5px;border-radius:50%;background:var(--tealM);flex-shrink:0;margin-top:5px}
+.meal-rule{font-size:11px;color:var(--teal);background:var(--tealL);padding:5px 9px;border-radius:6px;margin-top:7px;line-height:1.5}
+.wx-card{background:var(--card);border:1px solid var(--bdr);border-radius:12px;overflow:hidden;margin-bottom:5px}
+.wx-hdr{background:var(--teal);color:#fff;padding:11px 14px;display:flex;align-items:center;justify-content:space-between;cursor:pointer}
+.wx-hdr.travel{background:var(--blue)}
+.wx-title{font-size:14px;font-weight:700}
+.wx-sub{font-size:11px;opacity:.8;margin-top:1px}
+.wx-chev{font-size:16px;opacity:.8;transition:transform .2s}
+.wx-chev.open{transform:rotate(180deg)}
+.wx-body{display:none;padding:0 0 4px}
+.wx-body.open{display:block}
+.wx-mode-row{display:flex;gap:6px;padding:10px 14px;border-bottom:1px solid var(--gray);background:var(--gray)}
+.wx-mode-btn{flex:1;padding:7px 10px;border-radius:8px;border:1.5px solid var(--grayM);background:var(--card);font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;text-align:center;display:flex;align-items:center;justify-content:center;gap:4px}
+.wx-mode-btn.active{background:var(--tealL);border-color:var(--tealM);color:var(--teal)}
+.wx-mode-btn.active.travel{background:var(--blueL);border-color:var(--blueM);color:var(--blue)}
+.wx-mode-btn.locked{opacity:.45;cursor:not-allowed}
+.ex-row{border-bottom:1px solid var(--gray)}
+.ex-row:last-child{border-bottom:none}
+.ex-top{display:flex;align-items:flex-start;gap:10px;padding:9px 14px;cursor:pointer;user-select:none}
+.ex-row.done .ex-name{color:var(--teal);text-decoration:line-through;text-decoration-color:var(--tealT)}
+.ex-row.done .chk{background:var(--tealM);border-color:var(--tealM)}
+.ex-row.done .ex-top{background:var(--tealL)}
+.ex-name{font-size:13px;font-weight:600;flex:1;line-height:1.3}
+.ex-note{font-size:11px;color:var(--muted);margin-top:2px}
+.ex-meta{text-align:right;min-width:80px;flex-shrink:0}
+.ex-sets{font-size:13px;font-weight:700;color:var(--teal)}
+.ex-prev{font-size:10px;color:var(--muted);margin-top:2px}
+.ex-log{display:none;padding:12px 14px;background:var(--gray);border-top:1px solid var(--grayM)}
+.ex-log.open{display:block}
+.log-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:6px}
+.feel-row{display:flex;gap:6px;margin-bottom:10px}
+.feel-btn{flex:1;padding:9px 4px;border-radius:8px;border:1.5px solid var(--grayM);background:var(--card);font-size:11px;font-weight:600;color:var(--dark);cursor:pointer;text-align:center;line-height:1.3}
+.feel-btn.sel-easy{background:#E1F5EE;border-color:#1D9E75;color:#085041}
+.feel-btn.sel-good{background:#E6F1FB;border-color:#185FA5;color:#0C447C}
+.feel-btn.sel-hard{background:#FAEEDA;border-color:#EF9F27;color:#633806}
+.log-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px}
+.log-field label{display:block;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--muted);margin-bottom:3px}
+.log-field input{width:100%;padding:9px 4px;border-radius:8px;border:1.5px solid var(--grayM);font-size:16px;font-weight:700;color:var(--dark);background:var(--card);text-align:center;outline:none;-webkit-appearance:none}
+.log-field input:focus{border-color:var(--tealM)}
+.po-preview{font-size:12px;padding:8px 10px;border-radius:8px;background:var(--tealL);color:var(--teal);margin-bottom:10px;line-height:1.5;font-weight:600}
+.po-preview.hidden{display:none}
+.log-save{width:100%;padding:10px;border-radius:9px;background:var(--teal);color:#fff;font-size:13px;font-weight:700;border:none;cursor:pointer}
+.rec-card{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-radius:10px;background:var(--card);border:1px solid var(--bdr);margin-bottom:5px;cursor:pointer;user-select:none;transition:all .12s}
+.rec-card.done{background:var(--tealL);border-color:var(--tealT)}
+.rec-card.done .rec-title{color:var(--teal);text-decoration:line-through;text-decoration-color:var(--tealT)}
+.rec-card.done .chk{background:var(--tealM);border-color:var(--tealM)}
+.rec-title{font-size:13px;font-weight:700}
+.rx-card{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-radius:10px;background:var(--purpleL);border:1px solid rgba(83,74,183,.15);margin-bottom:5px;cursor:pointer;user-select:none}
+.rx-card.done{background:var(--tealL);border-color:var(--tealT)}
+.rx-card.done .iname{color:var(--teal);text-decoration:line-through}
+.rx-card.done .chk{background:var(--tealM);border-color:var(--tealM)}
+.add-btn{width:100%;padding:11px;border-radius:10px;border:1.5px dashed var(--grayM);background:transparent;color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;margin-top:6px}
+.travel-banner{background:var(--blueL);border:1px solid rgba(24,95,165,.2);border-radius:12px;padding:12px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px}
+.tb-icon{font-size:22px;flex-shrink:0}
+.tb-body{flex:1}
+.tb-title{font-size:13px;font-weight:700;color:var(--blue);margin-bottom:2px}
+.tb-sub{font-size:11px;color:var(--blue);opacity:.85;line-height:1.4}
+.tb-btn{padding:6px 10px;border-radius:7px;background:var(--blue);color:#fff;font-size:11px;font-weight:700;border:none;cursor:pointer;white-space:nowrap}
+.plan-prompt{background:var(--amberL);border:1px solid rgba(239,159,39,.3);border-radius:12px;padding:14px;margin-bottom:12px;cursor:pointer;display:flex;align-items:center;gap:10px}
+.plan-prompt:active{opacity:.85}
+.pp-icon{font-size:28px}
+.pp-body{flex:1}
+.pp-title{font-size:14px;font-weight:700;color:var(--amber);margin-bottom:2px}
+.pp-sub{font-size:12px;color:var(--amber);opacity:.85;line-height:1.4}
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;align-items:flex-end;justify-content:center}
+.overlay.open{display:flex}
+.modal{background:var(--card);border-radius:20px 20px 0 0;padding:20px 18px 32px;width:100%;max-width:600px;max-height:88vh;overflow-y:auto}
+.modal-title{font-size:17px;font-weight:700;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center}
+.modal-sub{font-size:12px;color:var(--muted);margin-bottom:14px;line-height:1.5}
+.modal-close{background:var(--gray);border:none;border-radius:50%;width:28px;height:28px;font-size:16px;cursor:pointer;color:var(--muted)}
+.plan-grid{display:grid;grid-template-columns:1fr;gap:6px;margin-bottom:14px}
+.plan-day{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:10px;border:1.5px solid var(--grayM);background:var(--card);cursor:pointer;user-select:none}
+.plan-day.travel{background:var(--blueL);border-color:var(--blueM)}
+.plan-day.locked{background:var(--gray);border-color:var(--grayM);cursor:not-allowed;opacity:.7}
+.plan-day-name{font-size:14px;font-weight:700;flex:1}
+.plan-day-mode{font-size:11px;font-weight:700;padding:3px 9px;border-radius:10px;background:var(--tealL);color:var(--teal);text-transform:uppercase;letter-spacing:.05em}
+.plan-day.travel .plan-day-mode{background:var(--blueL);color:var(--blue)}
+.plan-day.locked .plan-day-mode{background:var(--grayM);color:var(--muted)}
+.field{margin-bottom:13px}
+.field label{display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:4px}
+.field input,.field select,.field textarea{width:100%;padding:10px 12px;border-radius:9px;border:1.5px solid var(--grayM);font-size:14px;color:var(--dark);font-family:inherit;outline:none;background:var(--card)}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--tealM)}
+.field textarea{resize:none;height:65px}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tog-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;font-size:14px;font-weight:600}
+.tog{width:44px;height:24px;border-radius:12px;background:var(--grayM);border:none;cursor:pointer;position:relative;flex-shrink:0}
+.tog.on{background:var(--tealM)}
+.tog::after{content:'';position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:9px;background:#fff;transition:transform .2s}
+.tog.on::after{transform:translateX(20px)}
+.save-btn{width:100%;padding:13px;border-radius:12px;background:var(--teal);color:#fff;font-size:15px;font-weight:700;border:none;cursor:pointer;margin-top:8px}
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--bdr);display:flex;z-index:300;padding-bottom:env(safe-area-inset-bottom,0px)}
+.nb{flex:1;padding:10px 0 8px;display:flex;flex-direction:column;align-items:center;gap:2px;border:none;background:transparent;cursor:pointer;color:var(--muted)}
+.nb.active{color:var(--teal)}
+.nb-icon{font-size:20px;line-height:1}
+.nb-lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+.page{display:none}.page.active{display:block}
+.sum-card{background:var(--card);border:1px solid var(--bdr);border-radius:12px;padding:12px;text-align:center}
+.sum-val{font-size:26px;font-weight:700;color:var(--teal)}
+.sum-lbl{font-size:11px;color:var(--muted);margin-top:2px}
+.streak-card{background:var(--teal);color:#fff;border-radius:12px;padding:14px;text-align:center;margin-bottom:12px}
+.streak-num{font-size:44px;font-weight:700}
+</style>
+</head>
+<body>
+
+<div class="hdr" id="hdr">
+  <div class="hdr-row">
+    <div>
+      <div class="dayname" id="hdr-dayname">Monday</div>
+      <div class="datestr" id="hdr-date"></div>
+      <div>
+        <span class="daytype" id="hdr-type">Training day</span>
+        <span class="travel-badge" id="hdr-travel" style="display:none">&#9992; Travel</span>
+      </div>
+    </div>
+    <div>
+      <div class="pct-lbl">completed</div>
+      <div class="pct-num" id="hdr-pct">0%</div>
+    </div>
+  </div>
+  <div class="prog-lbl" id="prog-lbl">0 of 0 done</div>
+  <div class="prog-bar"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
+  <div class="daynav" id="daynav"></div>
+</div>
+
+<div id="page-today" class="page active">
+  <div class="content" id="main"></div>
+</div>
+
+<div id="page-progress" class="page">
+  <div class="content">
+    <div style="font-size:17px;font-weight:700;margin:4px 0 14px">Progress</div>
+    <div class="streak-card">
+      <div class="streak-num" id="streak-num">0</div>
+      <div style="font-size:13px;opacity:.8">day streak</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
+      <div class="sum-card"><div class="sum-val" id="sum-today">0%</div><div class="sum-lbl">Today</div></div>
+      <div class="sum-card"><div class="sum-val" id="sum-week">—</div><div class="sum-lbl">This week</div></div>
+      <div class="sum-card" onclick="promptWeight()" style="cursor:pointer"><div class="sum-val" id="sum-weight">304</div><div class="sum-lbl">lbs (tap to update)</div></div>
+      <div class="sum-card"><div class="sum-val" id="sum-lost">78</div><div class="sum-lbl">lbs lost total</div></div>
+    </div>
+    <div class="sum-card" onclick="openPlanner()" style="cursor:pointer;text-align:left;margin-bottom:14px;padding:14px">
+      <div style="font-size:13px;font-weight:700;margin-bottom:4px">&#9992; This week's travel schedule</div>
+      <div id="travel-summary" style="font-size:12px;color:var(--muted);line-height:1.5">Tap to set</div>
+    </div>
+    <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:8px">Next milestone: 280 lbs</div>
+    <div class="sum-card" style="text-align:left;margin-bottom:14px">
+      <div style="font-size:13px;font-weight:700;margin-bottom:6px"><span id="lbs-to-go">24</span> lbs to go</div>
+      <div style="height:6px;background:var(--gray);border-radius:3px;overflow:hidden">
+        <div id="milestone-bar" style="height:100%;background:var(--tealM);border-radius:3px;width:0%"></div>
+      </div>
+      <div style="font-size:11px;color:var(--muted);margin-top:4px;text-align:right" id="milestone-pct"></div>
+    </div>
+    <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:8px">Active custom medications</div>
+    <div id="custom-sum"></div>
+    <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin:14px 0 8px">Recent workout logs</div>
+    <div id="pr-summary"></div>
+  </div>
+</div>
+
+<div class="bottom-nav">
+  <button class="nb active" id="nav-today" onclick="showPage('today')">
+    <div class="nb-icon">&#9776;</div><div class="nb-lbl">Today</div>
+  </button>
+  <button class="nb" id="nav-progress" onclick="showPage('progress')">
+    <div class="nb-icon">&#9733;</div><div class="nb-lbl">Progress</div>
+  </button>
+</div>
+
+<div class="overlay" id="overlay-add">
+  <div class="modal">
+    <div class="modal-title">Add medication / supplement
+      <button class="modal-close" onclick="closeModal()">&#10005;</button>
+    </div>
+    <div class="field"><label>Name</label><input id="f-name" type="text" placeholder="e.g. Vitamin C 1000mg"></div>
+    <div class="field"><label>Dose / instructions</label><input id="f-dose" type="text" placeholder="e.g. 1 cap with food"></div>
+    <div class="field"><label>Time of day</label>
+      <select id="f-time" onchange="document.getElementById('f-other-wrap').style.display=this.value==='other'?'block':'none'">
+        <option value="800">8:00 am — with Meal 1</option>
+        <option value="1230">12:30 pm — with Meal 2</option>
+        <option value="1700">5:00 pm — pre-workout</option>
+        <option value="1930">7:30 pm — with dinner</option>
+        <option value="2100">9:00 pm — sleep stack</option>
+        <option value="other">Other time</option>
+      </select>
+    </div>
+    <div class="field" id="f-other-wrap" style="display:none"><label>Custom time</label><input id="f-other" type="text" placeholder="e.g. 2:00 pm"></div>
+    <div class="field"><label>Show on</label>
+      <select id="f-days">
+        <option value="all">Every day</option>
+        <option value="training">Training days</option>
+        <option value="mwf">Mon / Wed / Fri only</option>
+        <option value="weekend">Weekend only</option>
+      </select>
+    </div>
+    <div class="tog-row"><span>Has an end date?</span><button class="tog" id="tog-end" onclick="toggleEndDate()"></button></div>
+    <div id="end-fields" style="display:none">
+      <div class="field-row">
+        <div class="field"><label>Start</label><input id="f-start" type="date"></div>
+        <div class="field"><label>End</label><input id="f-end" type="date"></div>
+      </div>
+    </div>
+    <div class="field"><label>Note (optional)</label><textarea id="f-note" placeholder="e.g. Take 2 hrs away from magnesium"></textarea></div>
+    <button class="save-btn" onclick="saveCustom()">Add</button>
+  </div>
+</div>
+
+<div class="overlay" id="overlay-planner">
+  <div class="modal">
+    <div class="modal-title">&#9992; Weekly travel planner
+      <button class="modal-close" onclick="closePlanner()">&#10005;</button>
+    </div>
+    <div class="modal-sub">Tap any day to toggle travel mode. Saturday and Sunday are always home. Changes save automatically.</div>
+    <div class="plan-grid" id="planner-grid"></div>
+    <div style="font-size:11px;color:var(--muted);line-height:1.5;padding:10px 12px;background:var(--gray);border-radius:8px;margin-top:8px">
+      <strong>Travel mode shows:</strong> hotel gym workouts (DBs to 50lb + bench + treadmill), shower-based recovery instead of ice bath/sauna, and simplified meal guidance. Supplements stay the same.
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── CONFIG ──────────────────────────────────────────────────────────────────
+var DNAMES=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+var DSHORT=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+// Weekly schedule: Sat + Sun are locked lifting days (home-only)
+// Tue Thu are lifting days at home, Wed is cardio, Fri is HIIT, Mon is rest/flex
+var CFG={
+  0:{type:'Full body strength',isT:true, isH:false,wx:'fullbody', lockHome:true},
+  1:{type:'Rest / flex day',   isT:false,isH:false,wx:null,       lockHome:false},
+  2:{type:'Upper body strength',isT:true,isH:false,wx:'upper',    lockHome:false},
+  3:{type:'Cardio power day',  isT:true, isH:false,wx:'cardio',   lockHome:false},
+  4:{type:'Rest / flex day',   isT:false,isH:false,wx:null,       lockHome:false},
+  5:{type:'HIIT power day',    isT:true, isH:true, wx:'hiit',     lockHome:false},
+  6:{type:'Lower body strength',isT:true,isH:false,wx:'lower',    lockHome:true},
+};
+// Saturday becomes Lower body (heavy legs when you're home + rested)
+// Sunday becomes Full body (sets up Monday rest)
+
+// ─── WORKOUTS — HOME + TRAVEL VERSIONS ───────────────────────────────────────
+// Each exercise: [name, sets, reps, note, default_weight]
+var WX={
+  lower:{
+    home:{name:'Lower body strength',sub:'Home — squat rack focus',ex:[
+      ['Goblet squat warm-up','2','12','20lb DB. Deep and controlled.',20],
+      ['Back squat — warm-up','1','8','Bar only. Build slowly.',45],
+      ['Back squat — working sets','4','4-6','2.5-3 min rest. Progressive overload applied.',115],
+      ['Romanian deadlift','4','8-10','Hip hinge, bar close. 2 min rest.',95],
+      ['Bulgarian split squat','3','10','Rear foot on bench.',30],
+      ['Glute bridge','3','15','Bodyweight or barbell.',0],
+      ['Plank hold','3','45 sec','',0],
+    ]},
+    travel:{name:'Lower body — hotel',sub:'Marriott gym — DBs + bench',ex:[
+      ['Goblet squat warm-up','2','12','Heaviest DB hotel has. Deep.',30],
+      ['DB goblet squat — working','4','8-10','Slow eccentric. Use heaviest DB (45-50lb at most Marriotts).',50],
+      ['DB Romanian deadlift','4','8-10','Two DBs. Hip hinge pattern.',45],
+      ['Walking lunge — DBs','3','10 each','Length of the gym floor.',30],
+      ['DB step-up on bench','3','10 each','Step fully onto bench.',25],
+      ['Glute bridge','3','15','Bodyweight on floor.',0],
+      ['Plank hold','3','45 sec','',0],
+    ]},
+  },
+  upper:{
+    home:{name:'Upper body strength',sub:'Home — barbell focus',ex:[
+      ['Bench press warm-up','2','8','Build to working weight.',45],
+      ['Bench press — working sets','4','4-6','2.5-3 min rest. Use safety bars.',115],
+      ['Barbell bent-over row','4','6-8','Overhand grip, 45° hinge.',95],
+      ['Incline DB press','3','10-12','Bench at 45°.',30],
+      ['DB rear delt fly','3','12-15','Hinge forward, slow return.',15],
+      ['DB lateral raise','3','15','Slight elbow bend.',15],
+      ['DB overhead tricep ext','3','12','Single DB overhead.',20],
+    ]},
+    travel:{name:'Upper body — hotel',sub:'Marriott gym — DBs + bench',ex:[
+      ['DB bench press warm-up','2','10','Light to moderate DBs.',25],
+      ['DB flat bench press — working','4','6-8','Heaviest DBs available. 2 min rest.',50],
+      ['DB bent-over row','4','8-10','Two DBs, 45° hinge.',45],
+      ['DB incline press','3','10-12','Set bench to incline if adjustable.',35],
+      ['DB rear delt fly','3','12-15','Hinge forward.',15],
+      ['DB lateral raise','3','15','Slight bend.',15],
+      ['DB skull crusher','3','12','Lie on bench, DB to forehead.',20],
+    ]},
+  },
+  cardio:{
+    home:{name:'Cardio power day',sub:'Home — rower + SkiErg',ex:[
+      ['Concept2 rower warm-up','1','5 min','Damper 4-5.',0],
+      ['Rower intervals — 500m','6','500m each','Hard effort. Record 500m split.',0],
+      ['Rower cool-down','1','3 min','Easy pace.',0],
+      ['SkiErg warm-up','1','3 min','Arms first then full body.',0],
+      ['SkiErg 30s intervals','8','30s on/off','Full effort every pull.',0],
+      ['SkiErg cool-down','1','2 min','',0],
+      ['Hip flexor stretch','2','60s each','Kneeling.',0],
+      ['Thoracic rotation','2','10 each side','',0],
+    ]},
+    travel:{name:'Cardio — hotel',sub:'Marriott — treadmill + elliptical',ex:[
+      ['Treadmill warm-up walk','1','5 min','3.0-3.5 mph flat.',0],
+      ['Treadmill intervals','8','1 min hard / 1 min easy','Hard pace = 4.5-6 mph or 4-8% incline walk. Record pace.',0],
+      ['Treadmill cool-down','1','5 min','Easy walk.',0],
+      ['Elliptical or bike intervals','6','30s hard / 30s easy','If available. Max resistance on hard.',0],
+      ['Elliptical cool-down','1','3 min','Light resistance.',0],
+      ['Hip flexor stretch','2','60s each','Kneeling.',0],
+      ['Thoracic rotation','2','10 each side','',0],
+    ]},
+  },
+  hiit:{
+    home:{name:'HIIT power day',sub:'Home — assault bike + plyo',ex:[
+      ['Assault bike warm-up','1','5 min','Relaxed pace.',0],
+      ['Assault bike Tabata','2 sets','8 rounds','20s max / 10s rest. 3 min between sets. Record avg watts.',0],
+      ['Assault bike cool-down','1','5 min','Easy pace.',0],
+      ['Box jumps — STEP DOWN','5','5 jumps','Full reset. 90s-2 min rest.',0],
+      ['Kettlebell swing','4','15','Heaviest KB. Explosive hip drive.',0],
+    ]},
+    travel:{name:'HIIT — hotel',sub:'Marriott — treadmill/bike Tabatas',ex:[
+      ['Treadmill or bike warm-up','1','5 min','Easy pace.',0],
+      ['Treadmill Tabata sprints','2 sets','8 rounds','20s max sprint / 10s step-off. Speed 7-9 mph or walk at 12-15% incline. 3 min between sets.',0],
+      ['Bike Tabata (if available)','1 set','8 rounds','Alt: stationary bike 20s max / 10s rest.',0],
+      ['DB thruster','4','10','Moderate DBs — squat to overhead press. Explosive.',25],
+      ['Bodyweight jump squat — soft landing','4','10','Controlled. Land softly.',0],
+      ['DB swing','4','15','Two-handed or single. Heaviest available DB.',35],
+    ]},
+  },
+  fullbody:{
+    home:{name:'Full body + zone 2',sub:'Home — deadlift + OHP',ex:[
+      ['Deadlift warm-up','3','5','40/60/80% of working weight.',0],
+      ['Conventional deadlift','3','5','3 min rest. Record weight every week.',135],
+      ['Standing barbell OHP','4','6-8','From rack. Full lockout. 2 min rest.',65],
+      ['DB curl','3','12','Superset with row.',25],
+      ['DB single-arm row','3','10 each','Brace on bench.',70],
+      ['Zone 2 finisher','1','15 min','Rower or assault bike. Conversational pace.',0],
+    ]},
+    travel:{name:'Full body — hotel',sub:'Marriott — DBs + treadmill',ex:[
+      ['DB squat warm-up','2','10','Moderate DBs.',30],
+      ['DB Romanian deadlift','4','8-10','Two DBs. Hip hinge.',50],
+      ['DB overhead press','4','8','Seated on bench. Strict.',35],
+      ['DB curl','3','12','Superset with row.',25],
+      ['DB single-arm row','3','10 each','Brace on bench.',50],
+      ['Treadmill zone 2','1','15 min','Brisk walk 3.5-4 mph or light jog. Conversational.',0],
+    ]},
+  },
+};
+
+var MEALS={
+  bf_t:{time:'8:30 am',title:'Breakfast — ~500 cal / ~45g protein',items:['3 whole eggs scrambled in olive oil (21g protein)','4-5 oz smoked salmon or sardines — rotate daily','1/2 cup overnight oats with cinnamon — cooled for resistant starch (GF oats)','1/2 cup blueberries','1 tsp cod liver oil taken with this meal'],rule:'Protein first, then fat, then carbs. Walk 10-15 min after eating.'},
+  bf_r:{time:'8:30 am',title:'Breakfast — ~450 cal / ~40g protein',items:['3 whole eggs scrambled in olive oil','4 oz smoked salmon or sardines','1/2 cup overnight oats (cooled) with cinnamon + blueberries','1 tsp cod liver oil'],rule:'Rest day — slightly lighter. Protein still comes first.'},
+  bf_travel:{time:'Breakfast — travel',title:'Hotel breakfast strategy — ~500 cal / ~45g protein',items:['Priority: scrambled eggs (3-4) + smoked salmon if at hotel buffet','Avoid: pastries, waffles, sugary yogurts, hotel pancakes','Backup: protein shake (2 scoops whey isolate + water or almond milk)','Berries or small bowl of GF oats if available','Skip bacon/sausage — keep saturated fat low (APOE4 + ACE)'],rule:'Hotel breakfast is a landmine for your genetics. Default to eggs + salmon + fruit. Everything else skip.'},
+  lunch_a:{time:'12:30 pm',title:'Lunch — ~650 cal / ~55g protein (largest meal)',items:['6-7 oz grilled chicken or salmon','3/4 cup lentils or black beans — cooled and reheated','Large mixed greens salad: spinach, arugula, cucumber','1/2 avocado','1/2 cup broccoli or broccoli sprouts','Olive oil + lemon dressing only','16 oz water minimum'],rule:'Largest meal. Protein first. Cool and reheat legumes for resistant starch.'},
+  lunch_r:{time:'12:30 pm',title:'Lunch — ~600 cal / ~50g protein',items:['6 oz chicken or salmon','3/4 cup lentils or black beans (cooled + reheated)','Large salad + olive oil + lemon + 1/2 avocado','1/2 cup broccoli sprouts'],rule:'Rest day — reduce carbs ~30-40g. Protein stays the same.'},
+  lunch_travel:{time:'12:30 pm',title:'Lunch — travel strategy',items:['Target: large salad with grilled chicken, salmon, or hard-boiled eggs','Dressing: olive oil + lemon if available, otherwise skip dressing','Avoid: sandwiches (wheat), pasta salads, fried proteins, creamy dressings','Backup: Chipotle bowl (double chicken, black beans, veggies, guac, no rice/tortilla)','Aim for 50g+ protein even when eating out'],rule:'Protein and greens first. Assume restaurant food is higher sodium — drink extra water.'},
+  pre:{time:'5:00 pm',title:'Pre-workout snack (optional)',items:['Option A: Plain full-fat Greek yogurt + walnuts (~17g protein)','Option B: 2 hard-boiled eggs + 1 oz almonds','Option C: Skip entirely — trust tirzepatide'],rule:'Only if genuinely hungry. HIIT day: keep very light or skip.'},
+  shake:{time:'7:15 pm',title:'Post-workout shake — ~390 cal / ~50g protein',items:['2 scoops whey isolate (~50g protein)','1/2 cup frozen blueberries + 1 handful baby spinach','8-10 oz unsweetened almond milk','1/2 small frozen banana + 1 tsp chia + 1/4 tsp cinnamon'],rule:'Within 20-30 min of finishing training. Non-negotiable anabolic window.'},
+  shake_travel:{time:'7:15 pm',title:'Post-workout shake — travel version',items:['2 scoops whey isolate + water or almond milk (if available)','Pack in a shaker bottle — easiest travel supplement','Skip the frozen fruit additions on the road — just the protein'],rule:'Bring single-serving whey packets or a travel shaker bottle in your carry-on.'},
+  din_t:{time:'7:45 pm',title:'Dinner — ~475 cal / ~40g protein',items:['5-6 oz baked salmon or skinless chicken thigh','2 cups roasted vegetables in olive oil + garlic','1/2 cup sweet potato (cooled then reheated) or 1/3 cup brown rice'],rule:'Kitchen closes 8:30 pm. Herbal tea only after (chamomile, passionflower, lemon balm).'},
+  din_r:{time:'7:00 pm',title:'Dinner — ~450 cal / ~40g protein',items:['5 oz salmon or chicken + 2 cups roasted vegetables','Small portion sweet potato or skip carbs'],rule:'No post-workout shake today. Kitchen closes 8:30 pm.'},
+  din_travel:{time:'7:30 pm',title:'Dinner — travel strategy',items:['Best options: grilled salmon, steak (lean cut), chicken breast','Sides: double vegetables, sweet potato if on menu, skip bread basket','Avoid: pasta, risotto, creamy sauces, heavy fried foods','Drinks: water with lemon. Skip alcohol within 3 hrs of sleep (your sleep genetics)','Ask for vegetables cooked in olive oil, not butter (APOE4 + ACE)'],rule:'Most hotel restaurants can accommodate protein + veg + olive oil. Ask.'},
+};
+
+// ─── STATE ────────────────────────────────────────────────────────────────────
+var selDay=new Date().getDay();
+var TODAY=new Date().getDay();
+var checks={};        // date:id -> true
+var custom=[];        // custom supplement objects
+var exLog={};         // wxKey_exIndex_mode -> {sets,reps,weight,feel,date}
+var travelPlan={};    // dayIdx -> true (travel)
+var planWeekKey='';   // yyyy-ww key for this week's plan
+var weight=304;
+var START_WEIGHT=382;
+var hasEndDate=false;
+
+function weekKey(d){
+  d=d||new Date();
+  var onejan=new Date(d.getFullYear(),0,1);
+  var week=Math.ceil((((d-onejan)/86400000)+onejan.getDay()+1)/7);
+  return d.getFullYear()+'-w'+week;
+}
+
+function load(){
+  try{checks=JSON.parse(localStorage.getItem('aj4_checks')||'{}');}catch(e){checks={};}
+  try{custom=JSON.parse(localStorage.getItem('aj4_custom')||'[]');}catch(e){custom=[];}
+  try{exLog=JSON.parse(localStorage.getItem('aj4_exlog')||'{}');}catch(e){exLog={};}
+  try{
+    var tp=JSON.parse(localStorage.getItem('aj4_travel')||'{}');
+    if(tp.week===weekKey()){travelPlan=tp.plan||{};planWeekKey=tp.week;}
+    else{travelPlan={};planWeekKey='';}
+  }catch(e){travelPlan={};}
+  weight=parseInt(localStorage.getItem('aj4_weight')||'304');
+}
+function save(){
+  localStorage.setItem('aj4_checks',JSON.stringify(checks));
+  localStorage.setItem('aj4_custom',JSON.stringify(custom));
+  localStorage.setItem('aj4_exlog',JSON.stringify(exLog));
+  localStorage.setItem('aj4_travel',JSON.stringify({week:planWeekKey||weekKey(),plan:travelPlan}));
+  localStorage.setItem('aj4_weight',weight);
+}
+
+function selDate(){
+  var d=new Date();
+  d.setDate(d.getDate()+(selDay-TODAY));
+  return d.toISOString().split('T')[0];
+}
+function ck(id){return selDate()+':'+id;}
+function isOn(id){return !!checks[ck(id)];}
+function toggleCk(id){
+  var k=ck(id);
+  if(checks[k])delete checks[k];else checks[k]=true;
+  save();render();
+}
+
+// ─── TRAVEL MODE ─────────────────────────────────────────────────────────────
+function isTravelDay(d){
+  if(CFG[d]&&CFG[d].lockHome)return false;
+  return !!travelPlan[d];
+}
+function toggleTravel(d){
+  if(CFG[d].lockHome)return;
+  if(travelPlan[d])delete travelPlan[d];else travelPlan[d]=true;
+  planWeekKey=weekKey();
+  save();
+  renderPlanner();
+  render();
+  updateProgress();
+}
+
+// ─── CHECKMARK SVG ───────────────────────────────────────────────────────────
+function chkSVG(on){
+  return '<div class="chk">'+(on?'<svg width="11" height="11" viewBox="0 0 11 11"><polyline points="1.5,5.5 4.5,8.5 9.5,2.5" stroke="white" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>':'')+'</div>';
+}
+
+// ─── ITEM BUILDERS ───────────────────────────────────────────────────────────
+function makeItem(id,name,dose,tags,note,noteClass){
+  var on=isOn(id);
+  var tagHTML=(tags||[]).map(function(t){return '<span class="tag '+t.c+'">'+t.t+'</span>';}).join('');
+  var noteHTML=note?'<div class="inote '+(noteClass||'teal')+'">'+note+'</div>':'';
+  return '<div class="item'+(on?' done':'')+'" onclick="toggleCk(\''+id+'\')">'+
+    chkSVG(on)+'<div class="ibody"><div class="iname">'+name+tagHTML+'</div><div class="idose">'+dose+'</div>'+noteHTML+'</div></div>';
+}
+function makeRec(id,title,detail){
+  var on=isOn(id);
+  return '<div class="rec-card'+(on?' done':'')+'" onclick="toggleCk(\''+id+'\')">'+
+    chkSVG(on)+'<div class="ibody"><div class="rec-title">'+title+'</div><div class="idose">'+detail+'</div></div></div>';
+}
+function makeRx(id,name,detail){
+  var on=isOn(id);
+  return '<div class="rx-card'+(on?' done':'')+'" onclick="toggleCk(\''+id+'\')">'+
+    chkSVG(on)+'<div class="ibody"><div class="iname">'+name+'<span class="tag trx">Rx</span></div><div class="idose">'+detail+'</div></div></div>';
+}
+function makeMeal(meal){
+  var mid='meal_'+meal.time.replace(/[^a-z0-9]/gi,'_');
+  var open=isOn(mid+'_open');
+  var itemsHTML=meal.items.map(function(i){return '<div class="meal-item"><div class="meal-dot2"></div><div>'+i+'</div></div>';}).join('');
+  return '<div class="meal-card"><div class="meal-hdr" onclick="toggleMeal(\''+mid+'\')">'+
+    '<div class="meal-dot"></div><div style="flex:1"><div class="meal-name">'+meal.time+' — '+meal.title+'</div></div>'+
+    '<div class="meal-chev'+(open?' open':'')+'">&#8964;</div></div>'+
+    '<div class="meal-body'+(open?' open':'')+'" id="'+mid+'">'+itemsHTML+
+    '<div class="meal-rule">'+meal.rule+'</div></div></div>';
+}
+
+// ─── BLOCK (COLLAPSIBLE TIME SECTION) ────────────────────────────────────────
+function makeBlock(pillTxt,pillClass,html,blockId){
+  if(!html||!html.trim())return '';
+  var bid=blockId||'blk_'+pillTxt.replace(/[^a-z0-9]/gi,'_');
+  var open=isOn(bid+'_open');
+  var itemCount=(html.match(/class="item /g)||[]).length+(html.match(/class="rec-card/g)||[]).length+(html.match(/class="rx-card/g)||[]).length+(html.match(/class="ex-row/g)||[]).length;
+  var doneCount=(html.match(/class="item done/g)||[]).length+(html.match(/class="rec-card done/g)||[]).length+(html.match(/class="rx-card done/g)||[]).length+(html.match(/class="ex-row done/g)||[]).length;
+  var badge=itemCount>0?'<span class="tpill-count">'+doneCount+'/'+itemCount+'</span>':'';
+  return '<div class="tblock"><div class="tpill-row">'+
+    '<div class="tpill'+(pillClass?' '+pillClass:'')+'" onclick="toggleBlock(\''+bid+'\')">'+pillTxt+' '+(open?'▲':'▼')+'</div>'+
+    badge+'</div><div class="supp-group'+(open?' open':'')+'" id="'+bid+'">'+html+'</div></div>';
+}
+function toggleBlock(bid){
+  var k=ck(bid+'_open');
+  if(checks[k])delete checks[k];else checks[k]=true;
+  save();render();
+}
+
+// ─── WORKOUT WITH PROGRESSIVE OVERLOAD ───────────────────────────────────────
+function getExLogKey(wxKey,mode,idx){
+  // For DB exercises, use normalized exercise name so home/hotel share progression
+  // For home-only equipment (barbell, rower, bike, KB, etc), keep wxKey+mode+idx
+  var ex=WX[wxKey]&&WX[wxKey][mode]&&WX[wxKey][mode].ex[idx];
+  if(!ex)return wxKey+'_'+mode+'_'+idx;
+  var name=ex[0].toLowerCase();
+  // DB-only exercises share progression across home/travel
+  if(name.indexOf('db ')===0||name.indexOf(' db')>-1||name.indexOf('dumbbell')>-1||name.indexOf('goblet')>-1||name.indexOf('walking lunge')>-1){
+    return 'shared_'+name.replace(/[^a-z0-9]/g,'_');
+  }
+  // Everything else stays mode-specific
+  return wxKey+'_'+mode+'_'+idx;
+}
+
+function parseRepRange(reps){
+  // returns [min,max] from strings like "4-6", "8-10", "15", "45 sec"
+  var m=reps.match(/(\d+)\s*-\s*(\d+)/);
+  if(m)return [parseInt(m[1]),parseInt(m[2])];
+  var n=reps.match(/(\d+)/);
+  if(n)return [parseInt(n[1]),parseInt(n[1])];
+  return [null,null];
+}
+
+function calculateOverload(ex,lastLog){
+  // returns {suggestedWeight, reason} for next session
+  if(!lastLog||!lastLog.weight)return null;
+  var targetReps=parseRepRange(ex[2]);
+  var actualReps=parseInt(lastLog.reps)||0;
+  var lastWt=parseFloat(lastLog.weight)||0;
+  var feel=lastLog.feel||'good';
+  if(lastWt===0)return null;
+
+  // Only apply overload to weighted exercises (not cardio/time-based)
+  if(ex[2].indexOf('min')>-1||ex[2].indexOf('sec')>-1)return null;
+
+  var suggestion=lastWt;
+  var reason='';
+
+  if(actualReps>=targetReps[1]){
+    // Hit top of range
+    if(feel==='easy'){suggestion=lastWt+5;reason='+5 lbs (hit top reps, felt easy)';}
+    else if(feel==='good'){suggestion=lastWt+2.5;reason='+2.5 lbs (hit top reps, felt right)';}
+    else if(feel==='hard'){suggestion=lastWt;reason='Stay — hit reps but struggled. Try again.';}
+  } else if(actualReps<targetReps[0]){
+    // Missed bottom of range
+    suggestion=lastWt-5;
+    reason='-5 lbs (missed rep range last session)';
+  } else {
+    // In range but not at top
+    if(feel==='easy'){suggestion=lastWt+2.5;reason='+2.5 lbs (in rep range, felt easy)';}
+    else{suggestion=lastWt;reason='Stay — work up to top of rep range';}
+  }
+  return {suggestedWeight:suggestion,reason:reason};
+}
+
+function makeWx(wxKey,isTravel){
+  var mode=isTravel?'travel':'home';
+  var wx=WX[wxKey][mode];
+  var wxOpen=isOn('wx_open');
+  var canToggle=!CFG[selDay].lockHome;
+  var modeRow='<div class="wx-mode-row">'+
+    '<div class="wx-mode-btn '+(!isTravel?'active':'')+' '+(canToggle?'':'locked')+'" onclick="'+(canToggle?'setDayTravel(false)':'')+'">&#127968; Home</div>'+
+    '<div class="wx-mode-btn '+(isTravel?'active travel':'')+' '+(canToggle?'':'locked')+'" onclick="'+(canToggle?'setDayTravel(true)':'')+'">&#9992; Hotel</div>'+
+    '</div>';
+
+  var exRows=wx.ex.map(function(e,i){
+    var exId='ex_'+wxKey+'_'+mode+'_'+i;
+    var logId=getExLogKey(wxKey,mode,i);
+    var logOpen=isOn(exId+'_log');
+    var on=isOn(exId);
+    var lastLog=exLog[logId]||null;
+    var overload=calculateOverload(e,lastLog);
+
+    // Determine suggested weight for this session
+    var suggestedWt=overload?overload.suggestedWeight:(lastLog?lastLog.weight:e[4]);
+    if(!suggestedWt||suggestedWt===0)suggestedWt=e[4];
+
+    var prevTxt='';
+    if(lastLog&&lastLog.weight){
+      prevTxt='Last: '+lastLog.sets+'×'+lastLog.reps+' @ '+lastLog.weight+'lb';
+      if(overload&&overload.suggestedWeight!==parseFloat(lastLog.weight)){
+        prevTxt+=' → try '+overload.suggestedWeight+'lb';
+      }
+    } else if(e[4]>0) {
+      prevTxt='Suggested start: '+e[4]+'lb';
+    }
+
+    var poPreviewHTML=overload?'<div class="po-preview" id="'+exId+'_po">'+overload.reason+' → <strong>'+overload.suggestedWeight+'lb this session</strong></div>':'';
+
+    var logPanel='<div class="ex-log'+(logOpen?' open':'')+'" id="'+exId+'_log">'+
+      (overload?poPreviewHTML:'')+
+      '<div class="log-lbl">How did it feel?</div>'+
+      '<div class="feel-row">'+
+        '<div class="feel-btn '+(lastLog&&lastLog.feel==='easy'?'sel-easy':'')+'" onclick="setFeel(\''+exId+'\',\'easy\')">&#128170; Too easy</div>'+
+        '<div class="feel-btn '+(lastLog&&lastLog.feel==='good'?'sel-good':'')+'" onclick="setFeel(\''+exId+'\',\'good\')">&#9989; Just right</div>'+
+        '<div class="feel-btn '+(lastLog&&lastLog.feel==='hard'?'sel-hard':'')+'" onclick="setFeel(\''+exId+'\',\'hard\')">&#128293; Tough/struggled</div>'+
+      '</div>'+
+      '<div class="log-lbl">What you actually did</div>'+
+      '<div class="log-grid">'+
+        '<div class="log-field"><label>Sets</label><input type="number" id="'+exId+'_sets" value="'+(lastLog?lastLog.sets:e[1].replace(/[^0-9]/g,''))+'" inputmode="numeric"></div>'+
+        '<div class="log-field"><label>Reps</label><input type="number" id="'+exId+'_reps" value="'+(lastLog?lastLog.reps:(e[2].match(/\d+/)||[''])[0])+'" inputmode="numeric"></div>'+
+        '<div class="log-field"><label>Weight (lb)</label><input type="number" id="'+exId+'_wt" value="'+suggestedWt+'" inputmode="numeric"></div>'+
+      '</div>'+
+      '<button class="log-save" onclick="saveExLog(\''+exId+'\',\''+wxKey+'\',\''+mode+'\','+i+')">Save & mark done</button>'+
+    '</div>';
+
+    return '<div class="ex-row'+(on?' done':'')+'" id="'+exId+'_row">'+
+      '<div class="ex-top" onclick="toggleExLog(\''+exId+'\')">'+
+        chkSVG(on)+
+        '<div style="flex:1">'+
+          '<div class="ex-name">'+e[0]+'</div>'+
+          (e[3]?'<div class="ex-note">'+e[3]+'</div>':'')+
+          (prevTxt?'<div class="ex-prev">'+prevTxt+'</div>':'')+
+        '</div>'+
+        '<div class="ex-meta">'+
+          '<div class="ex-sets">'+e[1]+' × '+e[2]+'</div>'+
+          (suggestedWt>0?'<div class="ex-prev" style="color:var(--teal);font-weight:700">'+suggestedWt+'lb</div>':'')+
+        '</div>'+
+      '</div>'+logPanel+
+    '</div>';
+  }).join('');
+
+  return '<div class="wx-card"><div class="wx-hdr'+(isTravel?' travel':'')+'" onclick="toggleWxCard()">'+
+    '<div><div class="wx-title">'+wx.name+'</div><div class="wx-sub">'+wx.sub+'</div></div>'+
+    '<div class="wx-chev'+(wxOpen?' open':'')+'">&#8964;</div></div>'+
+    '<div class="wx-body'+(wxOpen?' open':'')+'" id="wx-body">'+modeRow+exRows+'</div></div>';
+}
+
+function toggleWxCard(){
+  var k=ck('wx_open');
+  if(checks[k])delete checks[k];else checks[k]=true;
+  save();render();
+}
+function toggleExLog(exId){
+  var k=ck(exId+'_log');
+  if(checks[k])delete checks[k];else checks[k]=true;
+  save();render();
+}
+function setFeel(exId,val){
+  // visually select
+  var buttons=document.querySelectorAll('#'+exId+'_log .feel-btn');
+  buttons.forEach(function(b){b.classList.remove('sel-easy','sel-good','sel-hard');});
+  var map={easy:'sel-easy',good:'sel-good',hard:'sel-hard'};
+  var idx={easy:0,good:1,hard:2}[val];
+  if(buttons[idx])buttons[idx].classList.add(map[val]);
+  // stash temporarily
+  document.getElementById(exId+'_log').setAttribute('data-feel',val);
+}
+
+function saveExLog(exId,wxKey,mode,idx){
+  var sets=document.getElementById(exId+'_sets').value;
+  var reps=document.getElementById(exId+'_reps').value;
+  var wt=document.getElementById(exId+'_wt').value;
+  var feel=document.getElementById(exId+'_log').getAttribute('data-feel')||(exLog[getExLogKey(wxKey,mode,idx)]&&exLog[getExLogKey(wxKey,mode,idx)].feel)||'good';
+  var logId=getExLogKey(wxKey,mode,idx);
+  exLog[logId]={sets:sets,reps:reps,weight:wt,feel:feel,date:selDate()};
+  checks[ck(exId)]=true;
+  save();
+  render();
+}
+
+function setDayTravel(isTravel){
+  if(CFG[selDay].lockHome)return;
+  if(isTravel)travelPlan[selDay]=true;else delete travelPlan[selDay];
+  planWeekKey=weekKey();
+  save();render();
+}
+
+// ─── CUSTOM ITEMS ────────────────────────────────────────────────────────────
+function custActive(c){
+  if(!c.hasEndDate)return true;
+  var td=selDate();
+  return c.startDate<=td&&c.endDate>=td;
+}
+function daysLeft(c){
+  if(!c.hasEndDate)return null;
+  var end=new Date(c.endDate+'T12:00:00');
+  var now=new Date();now.setHours(12,0,0,0);
+  return Math.round((end-now)/86400000);
+}
+function custShowsDay(c){
+  if(!custActive(c))return false;
+  if(c.days==='all')return true;
+  if(c.days==='training')return CFG[selDay].isT;
+  if(c.days==='mwf')return selDay===1||selDay===3||selDay===5;
+  if(c.days==='weekend')return selDay===0||selDay===6;
+  return true;
+}
+function makeCustItem(c,idx){
+  if(!custShowsDay(c))return '';
+  var on=isOn('custom_'+c.id);
+  var dl=daysLeft(c);
+  var dlBadge=dl!==null&&dl>=0?'<span class="days-left">'+dl+'d left</span>':'';
+  var noteHTML=c.note?'<div class="inote amber">'+c.note+'</div>':'';
+  return '<div class="item'+(on?' done':'')+'" onclick="toggleCk(\'custom_'+c.id+'\')">'+
+    chkSVG(on)+'<div class="ibody"><div class="iname">'+c.name+'<span class="tag tcustom">custom</span>'+dlBadge+'</div><div class="idose">'+c.dose+'</div>'+noteHTML+'</div>'+
+    '<button class="del-btn" onclick="event.stopPropagation();delCustom('+idx+')">&#215;</button></div>';
+}
+function custAtTime(t){return custom.map(function(c,i){return c.time===t?makeCustItem(c,i):'';}).join('');}
+
+// ─── MAIN RENDER ─────────────────────────────────────────────────────────────
+function render(){
+  var day=selDay;
+  var cfg=CFG[day];
+  var isTravel=isTravelDay(day);
+  var isT=cfg.isT;
+  var isH=cfg.isH;
+  var isSat=day===6;
+  var isMWF=day===1||day===3||day===5;
+
+  // Header styling
+  document.getElementById('hdr').classList.toggle('travel',isTravel);
+  document.getElementById('hdr-travel').style.display=isTravel?'inline-block':'none';
+
+  var out='';
+
+  // TRAVEL BANNER
+  if(isTravel){
+    out+='<div class="travel-banner">'+
+      '<div class="tb-icon">&#9992;</div>'+
+      '<div class="tb-body">'+
+        '<div class="tb-title">Travel mode active</div>'+
+        '<div class="tb-sub">Hotel gym workout + travel meal/recovery guidance. Tap to manage week.</div>'+
+      '</div>'+
+      '<button class="tb-btn" onclick="openPlanner()">Manage</button>'+
+    '</div>';
+  }
+
+  // TRAVEL PLAN PROMPT ON SUNDAY
+  if(day===0&&planWeekKey!==weekKey()){
+    out+='<div class="plan-prompt" onclick="openPlanner()">'+
+      '<div class="pp-icon">&#9992;</div>'+
+      '<div class="pp-body">'+
+        '<div class="pp-title">Plan your week — travel days?</div>'+
+        '<div class="pp-sub">Tap to mark any days you\'ll be on the road this week. Takes 20 seconds.</div>'+
+      '</div>'+
+    '</div>';
+  }
+
+  // ── 8:00 AM SUPPLEMENTS ──
+  var am='';
+  am+=makeItem('omega3','Omega-3','2 caps — with fat-containing food',[]);
+  am+=makeItem('vitd','Vitamin D3 + K2','2,000-4,000 IU D3 + 100mcg MK-7 K2',[{c:'tnew',t:'new'}]);
+  am+=makeItem('clo','Cod liver oil','1 tsp — Vitamin A, omega-3, natural D3',[{c:'tnew',t:'new'}]);
+  am+=makeItem('nad','Liposomal NAD+','Per label — morning only',[{c:'tnew',t:'new'}]);
+  am+=makeItem('tmg','TMG (trimethylglycine)','Per label — methyl donor, morning only',[{c:'tnew',t:'new'}]);
+  am+=makeItem('sulfo','Sulforaphane 20mg','Double Wood — must contain myrosinase',[{c:'tnew',t:'new'}]);
+  am+=makeItem('lmnt','LMNT electrolytes','1 packet — dilute 50/50 if BP elevated',[]);
+  am+=custAtTime('800');
+  out+=makeBlock('8:00 am — supplements','',am,'blk_8am');
+
+  // ── B-COMPLEX MWF ──
+  if(isMWF){
+    var bwk=makeItem('b12','5-MTHF + B12 methylation complex','Rho Nutrition — with breakfast',[{c:'tfreq',t:'Mon/Wed/Fri'}],'Start at lowest dose. If wired, cut to 1x/week.','amber');
+    out+=makeBlock('8:00 am — methylation complex','amber',bwk,'blk_b12');
+  }
+
+  // ── SATURDAY RX ──
+  if(isSat){
+    var rx=makeRx('rx0','Tirzepatide 15mg','Weekly — request methylcobalamin compound at Mochi')+
+           makeRx('rx1','Testosterone cypionate 0.75ml','Weekly — continue as prescribed')+
+           makeRx('rx2','Anastrozole 0.5mg','Weekly — continue as prescribed');
+    out+=makeBlock('Saturday morning — weekly Rx','purple',rx,'blk_rx');
+  }
+
+  // ── BREAKFAST ──
+  var bfMeal=isTravel?MEALS.bf_travel:(isT?MEALS.bf_t:MEALS.bf_r);
+  out+=makeBlock('8:30 am — breakfast','',makeMeal(bfMeal),'blk_bf');
+
+  // ── LUNCH ──
+  var lunchMeal=isTravel?MEALS.lunch_travel:(isT?MEALS.lunch_a:MEALS.lunch_r);
+  out+=makeBlock('12:30 pm — lunch','',makeMeal(lunchMeal)+custAtTime('1230'),'blk_lunch');
+
+  // ── PRE-WORKOUT ──
+  if(isT){
+    var pre='';
+    pre+=makeItem('beet','Beetroot','2 caps — 45-60 min before 6 pm training',[]);
+    pre+=makeItem('creat','Creatine','3-5g with water — drink extra water',[]);
+    pre+=custAtTime('1700');
+    out+=makeBlock('5:00 pm — pre-workout supplements','amber',pre,'blk_pre');
+    out+=makeBlock('5:00 pm — pre-workout snack (optional)','amber',makeMeal(MEALS.pre),'blk_snack');
+  }
+
+  // ── WORKOUT ──
+  if(isT&&cfg.wx){
+    out+=makeBlock('6:00 pm — workout'+(isTravel?' (hotel)':''),isTravel?'blue':'amber',makeWx(cfg.wx,isTravel),'blk_wx');
+    if(isH)out+='<div class="warn-box">HIIT day: ice bath / cold shower immediately after — no wait. Most important recovery of the week.</div>';
+  } else if(!isT) {
+    out+='<div class="tblock"><div class="tpill gray">Rest / flex day</div><div class="rec-card" style="cursor:default">'+chkSVG(false)+'<div class="ibody"><div class="rec-title">No structured workout today</div><div class="idose">Treadmill walk is the only movement obligation. Use this as a true recovery day — critical for Sat/Sun lifting performance.</div></div></div></div>';
+  }
+
+  // ── POST-WORKOUT SHAKE ──
+  if(isT){
+    var shake=isTravel?MEALS.shake_travel:MEALS.shake;
+    out+=makeBlock('7:15 pm — post-workout shake','amber',makeMeal(shake),'blk_shake');
+  }
+
+  // ── DINNER ──
+  var dinMeal=isTravel?MEALS.din_travel:(isT?MEALS.din_t:MEALS.din_r);
+  var din=makeMeal(dinMeal)+
+    makeItem('colonbroom','Colon Broom','Per label — with a full glass of water',[])+
+    custAtTime('1930');
+  out+=makeBlock('7:30-8:00 pm — dinner','',din,'blk_din');
+
+  // ── RECOVERY ──
+  var rec='';
+  if(isTravel){
+    rec+=makeRec('tread-t','Treadmill walk — 45-60 min','Zone 2, 3.0-3.5 mph. News + Wheel of Fortune app if available.');
+    if(isT){
+      if(isH)rec+=makeRec('coldshower','Cold shower — immediately','3 min as cold as tolerable. HIIT recovery priority.');
+      else rec+=makeRec('coldshower','Cold shower — 30 min after lifting','3 min cold. Alternates with hot for contrast therapy.');
+      rec+=makeRec('hotshower','Hot shower or hotel hot tub','10-15 min heat exposure. Heat shock protein response.');
+    } else {
+      rec+=makeRec('outdoor-t','Outdoor walk — 30+ min','Natural light for circadian rhythm. Do this instead of pushing harder.');
+    }
+  } else if(day===1){
+    // Monday rest day
+    rec+=makeRec('tread','Treadmill — 60 min easy','2.8-3.2 mph. Recovery pace. News + Wheel of Fortune.');
+    rec+=makeRec('sauna-r','IR sauna — 25 min at 140°F','Optional but valuable for HRV recovery before Tuesday upper body.');
+    rec+=makeRec('mobility','Mobility + foam roll — 10-15 min','Full body. Sets up Tuesday session well.');
+  } else if(isT){
+    rec+=makeRec('tread','Treadmill — 60 min (before 5 pm)','Zone 2, 3.0-3.5 mph. News + Wheel of Fortune.');
+    if(isH)rec+=makeRec('icebath','Ice bath — immediately post-HIIT','4-5 min at 50-55°F. No wait needed after HIIT.');
+    else rec+=makeRec('icebath','Ice bath — 30 min after lifting','3-5 min. Wait 30 min post-strength to preserve hypertrophy signaling.');
+    rec+=makeRec('sauna','IR sauna — 25-30 min at 140°F','After ice bath. Hydrate well.');
+  }
+  if(rec)out+=makeBlock('Recovery',isTravel?'blue':(isT?'amber':'gray'),rec,'blk_rec');
+
+  // ── SLEEP STACK ──
+  var sleep=makeItem('mag','Magnesium glycinate','2 caps (300-400mg elemental)',[])+
+    makeItem('cherry','Tart cherry extract','2 caps — melatonin, uric acid, anti-inflammatory',[])+
+    makeItem('glycine','Glycine','3g — lowers core body temp',[])+
+    custAtTime('2100');
+  out+=makeBlock('9:00 pm — sleep stack','purple',sleep,'blk_sleep');
+
+  // ── OTHER CUSTOM ──
+  var knownTimes=['800','1230','1700','1930','2100'];
+  var otherCust=custom.map(function(c,i){return knownTimes.indexOf(c.time)===-1?makeCustItem(c,i):'';}).join('');
+  if(otherCust)out+=makeBlock('Other medications','gray',otherCust,'blk_other');
+
+  // ── ON HOLD ──
+  out+='<div class="warn-box" style="margin-top:6px"><strong>On hold — MD approval first:</strong> Berberine (tirzepatide interaction) | Glutathione (CBS sulfur conflict — sulforaphane above replaces this)</div>';
+
+  // ── ADD BUTTON ──
+  out+='<button class="add-btn" onclick="openModal()">+ Add medication or supplement</button>';
+
+  document.getElementById('main').innerHTML=out;
+
+  // HEADER
+  document.getElementById('hdr-dayname').textContent=DNAMES[day];
+  document.getElementById('hdr-type').textContent=cfg.type;
+  var d=new Date();d.setDate(d.getDate()+(day-TODAY));
+  document.getElementById('hdr-date').textContent=d.toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+
+  // PROGRESS
+  var items=document.querySelectorAll('#main .item:not([style*="cursor:default"]), #main .rec-card:not([style*="cursor:default"]), #main .rx-card, #main .ex-row');
+  var done=document.querySelectorAll('#main .item.done, #main .rec-card.done, #main .rx-card.done, #main .ex-row.done');
+  var pct=items.length?Math.round(done.length/items.length*100):0;
+  document.getElementById('prog-lbl').textContent=done.length+' of '+items.length+' done';
+  document.getElementById('prog-fill').style.width=pct+'%';
+  document.getElementById('hdr-pct').textContent=pct+'%';
+}
+
+function toggleMeal(mid){
+  var k=ck(mid+'_open');
+  if(checks[k])delete checks[k];else checks[k]=true;
+  var body=document.getElementById(mid);
+  var chev=body&&body.previousElementSibling&&body.previousElementSibling.querySelector('.meal-chev');
+  if(body){body.classList.toggle('open');if(chev)chev.classList.toggle('open');}
+  save();
+}
+
+// ─── DAY NAV ─────────────────────────────────────────────────────────────────
+function buildNav(){
+  var nav=document.getElementById('daynav');
+  nav.innerHTML='';
+  for(var i=0;i<7;i++){
+    (function(d){
+      var b=document.createElement('button');
+      b.className='dpill'+(d===TODAY?' istoday':'')+(d===selDay?' active':'');
+      b.innerHTML=DSHORT[d]+(isTravelDay(d)?'<span class="tmark"></span>':'');
+      b.onclick=function(){selDay=d;buildNav();render();};
+      nav.appendChild(b);
+    })((TODAY+i)%7);
+  }
+}
+
+// ─── PAGES ───────────────────────────────────────────────────────────────────
+function showPage(name){
+  var pages=document.querySelectorAll('.page');
+  for(var i=0;i<pages.length;i++)pages[i].classList.remove('active');
+  var nbs=document.querySelectorAll('.nb');
+  for(var i=0;i<nbs.length;i++)nbs[i].classList.remove('active');
+  document.getElementById('page-'+name).classList.add('active');
+  document.getElementById('nav-'+name).classList.add('active');
+  if(name==='progress')updateProgress();
+}
+
+function updateProgress(){
+  var lost=START_WEIGHT-weight;
+  document.getElementById('sum-weight').textContent=weight;
+  document.getElementById('sum-lost').textContent=lost;
+  document.getElementById('lbs-to-go').textContent=Math.max(0,weight-280);
+  var pBar=Math.min(100,Math.round((START_WEIGHT-weight)/(START_WEIGHT-200)*100));
+  document.getElementById('milestone-bar').style.width=pBar+'%';
+  document.getElementById('milestone-pct').textContent=pBar+'% toward goal';
+  document.getElementById('sum-today').textContent=document.getElementById('hdr-pct').textContent;
+
+  // streak
+  var streak=0;var dt=new Date();
+  for(var i=0;i<60;i++){
+    var dk=dt.toISOString().split('T')[0];
+    var any=false;
+    for(var key in checks)if(key.indexOf(dk+':')===0){any=true;break;}
+    if(any){streak++;dt.setDate(dt.getDate()-1);}else break;
+  }
+  document.getElementById('streak-num').textContent=streak;
+
+  // travel summary
+  var travelDays=[];
+  for(var d=0;d<7;d++)if(travelPlan[d])travelDays.push(DNAMES[d]);
+  var ts=document.getElementById('travel-summary');
+  if(planWeekKey!==weekKey()){ts.textContent='Tap to set this week\'s travel schedule';}
+  else if(travelDays.length===0){ts.textContent='All home this week — nice.';}
+  else{ts.textContent='Traveling: '+travelDays.join(', ');}
+
+  // custom meds
+  var actives=custom.filter(custActive);
+  var cs=document.getElementById('custom-sum');
+  if(actives.length===0){cs.innerHTML='<div style="color:var(--muted);font-size:13px;font-style:italic;padding:8px 0">None active</div>';}
+  else{
+    cs.innerHTML=actives.map(function(c){
+      var dl=daysLeft(c);
+      return '<div class="item" style="margin-bottom:6px;cursor:default">'+chkSVG(false)+'<div class="ibody"><div class="iname">'+c.name+'<span class="tag tcustom">custom</span>'+(dl!==null?'<span class="days-left">'+dl+'d left</span>':'')+'</div><div class="idose">'+c.dose+'</div>'+(c.note?'<div class="inote amber">'+c.note+'</div>':'')+'</div></div>';
+    }).join('');
+  }
+
+  // PR summary — last 5 logs across all workouts
+  var logs=[];
+  for(var key in exLog){
+    var parts=key.split('_');
+    var wxKey=parts[0];var mode=parts[1];var idx=parseInt(parts[2]);
+    if(WX[wxKey]&&WX[wxKey][mode]&&WX[wxKey][mode].ex[idx]){
+      logs.push({ex:WX[wxKey][mode].ex[idx][0],log:exLog[key],mode:mode});
+    }
+  }
+  logs.sort(function(a,b){return (b.log.date||'').localeCompare(a.log.date||'');});
+  logs=logs.slice(0,8);
+  var ps=document.getElementById('pr-summary');
+  if(logs.length===0){ps.innerHTML='<div style="color:var(--muted);font-size:13px;font-style:italic;padding:8px 0">No exercises logged yet</div>';}
+  else{
+    ps.innerHTML=logs.map(function(l){
+      return '<div class="item" style="margin-bottom:6px;cursor:default">'+chkSVG(false)+'<div class="ibody"><div class="iname">'+l.ex+(l.mode==='travel'?'<span class="tag ttravel">hotel</span>':'')+'</div><div class="idose">'+l.log.sets+'×'+l.log.reps+' @ '+l.log.weight+'lb — '+l.log.date+'</div></div></div>';
+    }).join('');
+  }
+}
+
+function promptWeight(){
+  var w=prompt('Current weight (lbs):');
+  if(w&&!isNaN(w)){weight=parseInt(w);save();updateProgress();}
+}
+
+// ─── MODAL (ADD CUSTOM) ──────────────────────────────────────────────────────
+function openModal(){
+  document.getElementById('overlay-add').classList.add('open');
+  var now=new Date().toISOString().split('T')[0];
+  document.getElementById('f-start').value=now;
+  var e=new Date();e.setDate(e.getDate()+9);
+  document.getElementById('f-end').value=e.toISOString().split('T')[0];
+}
+function closeModal(){document.getElementById('overlay-add').classList.remove('open');}
+function toggleEndDate(){hasEndDate=!hasEndDate;document.getElementById('tog-end').classList.toggle('on',hasEndDate);document.getElementById('end-fields').style.display=hasEndDate?'block':'none';}
+function saveCustom(){
+  var name=document.getElementById('f-name').value.trim();
+  var dose=document.getElementById('f-dose').value.trim();
+  if(!name){alert('Please enter a name.');return;}
+  custom.push({id:Date.now().toString(),name:name,dose:dose,time:document.getElementById('f-time').value,days:document.getElementById('f-days').value,hasEndDate:hasEndDate,startDate:hasEndDate?document.getElementById('f-start').value:null,endDate:hasEndDate?document.getElementById('f-end').value:null,note:document.getElementById('f-note').value.trim()});
+  save();closeModal();render();
+}
+function delCustom(idx){if(!confirm('Remove this item?'))return;custom.splice(idx,1);save();render();}
+
+// ─── PLANNER MODAL ───────────────────────────────────────────────────────────
+function openPlanner(){
+  renderPlanner();
+  document.getElementById('overlay-planner').classList.add('open');
+}
+function closePlanner(){document.getElementById('overlay-planner').classList.remove('open');}
+function renderPlanner(){
+  var grid=document.getElementById('planner-grid');
+  var html='';
+  for(var i=0;i<7;i++){
+    (function(d){
+      var cfg=CFG[d];
+      var travel=!!travelPlan[d];
+      var locked=cfg.lockHome;
+      var mode=locked?'LOCKED HOME':(travel?'TRAVEL':'HOME');
+      html+='<div class="plan-day'+(travel?' travel':'')+(locked?' locked':'')+'" onclick="'+(locked?'':'toggleTravel('+d+')')+'">'+
+        '<div class="plan-day-name">'+DNAMES[d]+' — '+cfg.type+'</div>'+
+        '<div class="plan-day-mode">'+mode+'</div>'+
+      '</div>';
+    })(i);
+  }
+  grid.innerHTML=html;
+  // save the week key so we know they've been through the planner
+  planWeekKey=weekKey();
+  save();
+}
+
+// ─── INIT ────────────────────────────────────────────────────────────────────
+load();
+buildNav();
+render();
+</script>
+</body>
+</html>
