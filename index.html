@@ -295,7 +295,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     </div>
     <div class="modal-sub">Tap any day to toggle travel mode. Saturday and Sunday are always home. Changes save automatically.</div>
     <div class="plan-grid" id="planner-grid"></div>
-    <div style="font-size:11px;color:var(--muted);line-height:1.5;padding:10px 12px;background:var(--gray);border-radius:8px;margin-top:8px">
+    <button class="save-btn" onclick="confirmPlan()" style="margin-top:4px">Confirm plan</button>
+    <div style="font-size:11px;color:var(--muted);line-height:1.5;padding:10px 12px;background:var(--gray);border-radius:8px;margin-top:10px">
       <strong>Travel mode shows:</strong> hotel gym workouts (DBs to 50lb + bench + treadmill), shower-based recovery instead of ice bath/sauna, and simplified meal guidance. Supplements stay the same.
     </div>
   </div>
@@ -325,98 +326,98 @@ var CFG={
 var WX={
   lower:{
     home:{name:'Lower body strength',sub:'Home — squat rack focus',ex:[
-      ['Goblet squat warm-up','2','12','20lb DB. Deep and controlled.',20],
-      ['Back squat — warm-up','1','8','Bar only. Build slowly.',45],
-      ['Back squat — working sets','4','4-6','2.5-3 min rest. Progressive overload applied.',115],
-      ['Romanian deadlift','4','8-10','Hip hinge, bar close. 2 min rest.',95],
-      ['Bulgarian split squat','3','10','Rear foot on bench.',30],
-      ['Glute bridge','3','15','Bodyweight or barbell.',0],
-      ['Plank hold','3','45 sec','',0],
+      ['Goblet squat warm-up','2','12','20lb DB at chest. Deep, slow descent (3 sec down). Rest 60 sec between sets. Opens hips for squatting.',20],
+      ['Back squat — warm-up','1','8','Bar only (45 lb). Full depth, slow. Groove the pattern. Rest 90 sec before working sets.',45],
+      ['Back squat — working sets','4','4-6','Focus: brace hard, drive knees out, control descent (2 sec down, explosive up). Rest 2.5-3 min between sets. Do not rush.',115],
+      ['Romanian deadlift','4','8-10','Focus: hip hinge with soft knee, bar stays close to legs, feel hamstring stretch at bottom. Control descent (3 sec). Rest 2 min between sets.',95],
+      ['Bulgarian split squat','3','10 reps per leg (20 total)','Rear foot elevated on bench. Do all 10 reps on one leg, then switch. Slow descent, pause at bottom. Rest 90 sec after both legs done.',30],
+      ['Glute bridge','3','15','Bodyweight or barbell on hips. Squeeze glutes hard at top, 1 sec pause. Rest 60 sec between sets.',0],
+      ['Plank hold','3','45 sec','Straight line head to heels. Squeeze glutes and core. Rest 60 sec between sets.',0],
     ]},
     travel:{name:'Lower body — hotel',sub:'Marriott gym — DBs + bench',ex:[
-      ['Goblet squat warm-up','2','12','Heaviest DB hotel has. Deep.',30],
-      ['DB goblet squat — working','4','8-10','Slow eccentric. Use heaviest DB (45-50lb at most Marriotts).',50],
-      ['DB Romanian deadlift','4','8-10','Two DBs. Hip hinge pattern.',45],
-      ['Walking lunge — DBs','3','10 each','Length of the gym floor.',30],
-      ['DB step-up on bench','3','10 each','Step fully onto bench.',25],
-      ['Glute bridge','3','15','Bodyweight on floor.',0],
-      ['Plank hold','3','45 sec','',0],
+      ['Goblet squat warm-up','2','12','Heaviest DB hotel has at chest. Deep, slow (3 sec down). Rest 60 sec between sets.',30],
+      ['DB goblet squat — working','4','8-10','Focus: slow eccentric (3-4 sec down), pause 1 sec at bottom, drive up. Use heaviest DB (typically 45-50lb at Marriotts). Rest 2 min between sets.',50],
+      ['DB Romanian deadlift','4','8-10','Two DBs at sides. Hip hinge, soft knee, DBs slide down legs. Slow descent (3 sec), feel hamstring stretch. Rest 2 min between sets.',45],
+      ['Walking lunge — DBs','3','10 reps per leg (20 total)','DBs at sides. Long strides down the gym floor. Back knee nearly touches. Alternate legs. Rest 90 sec between sets.',30],
+      ['DB step-up on bench','3','10 reps per leg (20 total)','Step fully onto bench with one foot, drive up. Do all 10 reps one leg, then switch. Rest 90 sec after both legs done.',25],
+      ['Glute bridge','3','15','Bodyweight on floor. Squeeze glutes at top, 1 sec pause. Rest 60 sec.',0],
+      ['Plank hold','3','45 sec','Straight line. Squeeze core. Rest 60 sec between sets.',0],
     ]},
   },
   upper:{
     home:{name:'Upper body strength',sub:'Home — barbell focus',ex:[
-      ['Bench press warm-up','2','8','Build to working weight.',45],
-      ['Bench press — working sets','4','4-6','2.5-3 min rest. Use safety bars.',115],
-      ['Barbell bent-over row','4','6-8','Overhand grip, 45° hinge.',95],
-      ['Incline DB press','3','10-12','Bench at 45°.',30],
-      ['DB rear delt fly','3','12-15','Hinge forward, slow return.',15],
-      ['DB lateral raise','3','15','Slight elbow bend.',15],
-      ['DB overhead tricep ext','3','12','Single DB overhead.',20],
+      ['Bench press warm-up','2','8','Build to working weight (set 1 @ 50%, set 2 @ 70%). Controlled tempo. Rest 90 sec.',45],
+      ['Bench press — working sets','4','4-6','Focus: feet planted, shoulder blades retracted, controlled descent to lower chest (2 sec down), explosive press. Use safety bars. Rest 2.5-3 min between sets.',115],
+      ['Barbell bent-over row','4','6-8','Overhand grip, 45° hinge with flat back. Pull bar to lower sternum, squeeze shoulder blades. Rest 2 min between sets.',95],
+      ['Incline DB press','3','10-12','Bench at 45°. Full stretch at bottom, controlled up. Rest 90 sec between sets.',30],
+      ['DB rear delt fly','3','12-15','Focus: hinge forward at hips, arms slightly bent, squeeze shoulder blades together. Slow controlled return. Rest 60 sec between sets.',15],
+      ['DB lateral raise','3','15','Focus: slight elbow bend, lead with elbows (not hands), stop at shoulder height. Slow descent (3 sec down). Rest 60 sec between sets.',15],
+      ['DB overhead tricep ext','3','12','Single DB held overhead with both hands. Lower slowly behind head (3 sec), elbows tight. Rest 60 sec between sets.',20],
     ]},
     travel:{name:'Upper body — hotel',sub:'Marriott gym — DBs + bench',ex:[
-      ['DB bench press warm-up','2','10','Light to moderate DBs.',25],
-      ['DB flat bench press — working','4','6-8','Heaviest DBs available. 2 min rest.',50],
-      ['DB bent-over row','4','8-10','Two DBs, 45° hinge.',45],
-      ['DB incline press','3','10-12','Set bench to incline if adjustable.',35],
-      ['DB rear delt fly','3','12-15','Hinge forward.',15],
-      ['DB lateral raise','3','15','Slight bend.',15],
-      ['DB skull crusher','3','12','Lie on bench, DB to forehead.',20],
+      ['DB bench press warm-up','2','10','Light to moderate DBs. Controlled tempo. Rest 90 sec.',25],
+      ['DB flat bench press — working','4','6-8','Focus: controlled descent (2 sec), full chest stretch, press up powerfully. Heaviest DBs available. Rest 2 min between sets.',50],
+      ['DB bent-over row','4','8-10','Two DBs, 45° hinge, flat back. Pull to hips, squeeze shoulder blades. Rest 90 sec between sets.',45],
+      ['DB incline press','3','10-12','Set bench to incline if adjustable. Full stretch at bottom. Rest 90 sec between sets.',35],
+      ['DB rear delt fly','3','12-15','Hinge forward, slow squeeze at top, controlled return. Rest 60 sec between sets.',15],
+      ['DB lateral raise','3','15','Slight elbow bend, lead with elbows. Slow 3 sec descent. Rest 60 sec between sets.',15],
+      ['DB skull crusher','3','12','Lie on bench, DB to forehead (3 sec descent), extend to lockout. Elbows stay pointed up. Rest 60 sec between sets.',20],
     ]},
   },
   cardio:{
     home:{name:'Cardio power day',sub:'Home — rower + SkiErg',ex:[
-      ['Concept2 rower warm-up','1','5 min','Damper 4-5.',0],
-      ['Rower intervals — 500m','6','500m each','Hard effort. Record 500m split.',0],
-      ['Rower cool-down','1','3 min','Easy pace.',0],
-      ['SkiErg warm-up','1','3 min','Arms first then full body.',0],
-      ['SkiErg 30s intervals','8','30s on/off','Full effort every pull.',0],
-      ['SkiErg cool-down','1','2 min','',0],
-      ['Hip flexor stretch','2','60s each','Kneeling.',0],
-      ['Thoracic rotation','2','10 each side','',0],
+      ['Concept2 rower warm-up','1','5 min','Damper 4-5. Easy pace. Drive sequence: legs → hips → arms. No rest needed before intervals.',0],
+      ['Rower intervals — 500m','6','500m per interval','Hard effort — consistent 500m split across all 6. Rest 90 sec between intervals. Record split time for tracking.',0],
+      ['Rower cool-down','1','3 min','Easy pace to flush legs. Rest 2 min before SkiErg.',0],
+      ['SkiErg warm-up','1','3 min','Arms-only first minute, then full body pull. Rest 60 sec before intervals.',0],
+      ['SkiErg 30s intervals','8','30 sec on / 30 sec off','Full effort on every pull. Rest 30 sec between. Record average pace. This taxes lats, triceps, core.',0],
+      ['SkiErg cool-down','1','2 min','Easy pace.',0],
+      ['Hip flexor stretch — kneeling','2','60 sec per side (2 min total)','Kneeling lunge position, push hips forward, feel stretch in front of back leg. Switch sides. Rest 30 sec.',0],
+      ['Thoracic rotation','2','10 reps per side (20 total)','Seated or quadruped. Rotate upper back, open chest. Controlled. Rest 30 sec.',0],
     ]},
     travel:{name:'Cardio — hotel',sub:'Marriott — treadmill + elliptical',ex:[
-      ['Treadmill warm-up walk','1','5 min','3.0-3.5 mph flat.',0],
-      ['Treadmill intervals','8','1 min hard / 1 min easy','Hard pace = 4.5-6 mph or 4-8% incline walk. Record pace.',0],
-      ['Treadmill cool-down','1','5 min','Easy walk.',0],
-      ['Elliptical or bike intervals','6','30s hard / 30s easy','If available. Max resistance on hard.',0],
+      ['Treadmill warm-up walk','1','5 min','3.0-3.5 mph flat. Easy pace.',0],
+      ['Treadmill intervals','8','1 min hard / 1 min easy','Hard pace = 4.5-6 mph OR 4-8% incline walk at 3.5-4 mph. Record your working pace for next time.',0],
+      ['Treadmill cool-down','1','5 min','Easy walk 3.0 mph, flat. Rest 2 min before elliptical.',0],
+      ['Elliptical or bike intervals','6','30 sec hard / 30 sec easy','Max resistance on hard 30s. Skip if no elliptical — just extend treadmill section.',0],
       ['Elliptical cool-down','1','3 min','Light resistance.',0],
-      ['Hip flexor stretch','2','60s each','Kneeling.',0],
-      ['Thoracic rotation','2','10 each side','',0],
+      ['Hip flexor stretch — kneeling','2','60 sec per side (2 min total)','Switch sides between sets. Rest 30 sec.',0],
+      ['Thoracic rotation','2','10 reps per side (20 total)','Controlled rotations. Rest 30 sec.',0],
     ]},
   },
   hiit:{
     home:{name:'HIIT power day',sub:'Home — assault bike + plyo',ex:[
-      ['Assault bike warm-up','1','5 min','Relaxed pace.',0],
-      ['Assault bike Tabata','2 sets','8 rounds','20s max / 10s rest. 3 min between sets. Record avg watts.',0],
-      ['Assault bike cool-down','1','5 min','Easy pace.',0],
-      ['Box jumps — STEP DOWN','5','5 jumps','Full reset. 90s-2 min rest.',0],
-      ['Kettlebell swing','4','15','Heaviest KB. Explosive hip drive.',0],
+      ['Assault bike warm-up','1','5 min','Relaxed pace. Get comfortable with bike handles.',0],
+      ['Assault bike Tabata','2 sets','8 rounds of 20s max / 10s rest','Signature burst athlete protocol. Max effort every 20s round. 3 min rest BETWEEN the 2 sets. Record average watts per set.',0],
+      ['Assault bike cool-down','1','5 min','Easy pace. Rest 2 min before box jumps.',0],
+      ['Box jumps — STEP DOWN always','5','5 jumps per set','Jump up explosively, STEP DOWN carefully (never jump down). Full reset between reps. Rest 90 sec-2 min between sets.',0],
+      ['Kettlebell swing','4','15','Heaviest KB available. Explosive hip drive (not a squat). KB comes to eye level from hips. Rest 60 sec between sets.',0],
     ]},
     travel:{name:'HIIT — hotel',sub:'Marriott — treadmill/bike Tabatas',ex:[
       ['Treadmill or bike warm-up','1','5 min','Easy pace.',0],
-      ['Treadmill Tabata sprints','2 sets','8 rounds','20s max sprint / 10s step-off. Speed 7-9 mph or walk at 12-15% incline. 3 min between sets.',0],
-      ['Bike Tabata (if available)','1 set','8 rounds','Alt: stationary bike 20s max / 10s rest.',0],
-      ['DB thruster','4','10','Moderate DBs — squat to overhead press. Explosive.',25],
-      ['Bodyweight jump squat — soft landing','4','10','Controlled. Land softly.',0],
-      ['DB swing','4','15','Two-handed or single. Heaviest available DB.',35],
+      ['Treadmill Tabata sprints','2 sets','8 rounds of 20s max / 10s step-off','Max sprint speed 7-9 mph OR 12-15% incline walk. Step feet onto side rails during 10s rest (do not change treadmill settings). 3 min rest BETWEEN the 2 sets.',0],
+      ['Bike Tabata (if available)','1 set','8 rounds of 20s max / 10s rest','Stationary bike. Max resistance during 20s. Skip if gym has no bike.',0],
+      ['DB thruster','4','10','Moderate DBs at shoulders. Squat then explosively press DBs overhead. Rest 75 sec between sets.',25],
+      ['Bodyweight jump squat','4','10','Controlled. Land SOFTLY with bent knees. Rest 60 sec between sets.',0],
+      ['DB swing','4','15','Two-handed between legs OR single arm. Heaviest available DB. Explosive hip drive. Rest 60 sec.',35],
     ]},
   },
   fullbody:{
     home:{name:'Full body + zone 2',sub:'Home — deadlift + OHP',ex:[
-      ['Deadlift warm-up','3','5','40/60/80% of working weight.',0],
-      ['Conventional deadlift','3','5','3 min rest. Record weight every week.',135],
-      ['Standing barbell OHP','4','6-8','From rack. Full lockout. 2 min rest.',65],
-      ['DB curl','3','12','Superset with row.',25],
-      ['DB single-arm row','3','10 each','Brace on bench.',70],
-      ['Zone 2 finisher','1','15 min','Rower or assault bike. Conversational pace.',0],
+      ['Deadlift warm-up','3','5 reps each set','40% / 60% / 80% of working weight. Rest 60-90 sec between warm-up sets.',0],
+      ['Conventional deadlift','3','5','Focus: feet hip-width, bar over mid-foot, neutral spine, drive through heels. Reset between each rep. Rest 3 min between sets.',135],
+      ['Standing barbell OHP','4','6-8','From rack at shoulder height. Brace core, press straight up to full lockout overhead. Rest 2 min between sets.',65],
+      ['DB curl','3','12','Focus: SLOW controlled contraction (2 sec up), squeeze biceps at top, slow descent (3 sec down). No swinging. Rest 60 sec (supersetted with single-arm row).',25],
+      ['DB single-arm row','3','10 reps per arm (20 total)','Brace one knee + hand on bench. Pull DB to hip, squeeze shoulder blade. Do all 10 reps one arm, switch. Rest 90 sec after both arms done.',70],
+      ['Zone 2 finisher','1','15 min','Rower or assault bike. Conversational pace (could hold a conversation). APOE4 brain health cardio.',0],
     ]},
     travel:{name:'Full body — hotel',sub:'Marriott — DBs + treadmill',ex:[
-      ['DB squat warm-up','2','10','Moderate DBs.',30],
-      ['DB Romanian deadlift','4','8-10','Two DBs. Hip hinge.',50],
-      ['DB overhead press','4','8','Seated on bench. Strict.',35],
-      ['DB curl','3','12','Superset with row.',25],
-      ['DB single-arm row','3','10 each','Brace on bench.',50],
-      ['Treadmill zone 2','1','15 min','Brisk walk 3.5-4 mph or light jog. Conversational.',0],
+      ['DB squat warm-up','2','10','Moderate DBs at sides or goblet. Controlled tempo. Rest 60 sec between sets.',30],
+      ['DB Romanian deadlift','4','8-10','Two DBs. Hip hinge with soft knee, DBs slide down legs. Slow descent (3 sec). Rest 2 min between sets.',50],
+      ['DB overhead press','4','8','Seated on bench for stability. Strict — no leg drive. Press to full lockout. Rest 2 min between sets.',35],
+      ['DB curl','3','12','SLOW controlled contraction (2 sec up, 3 sec down). Squeeze at top. Rest 60 sec (supersetted with row).',25],
+      ['DB single-arm row','3','10 reps per arm (20 total)','Brace one knee + hand on bench. Pull DB to hip. Switch arms after 10 reps. Rest 90 sec after both arms done.',50],
+      ['Treadmill zone 2','1','15 min','Brisk walk 3.5-4 mph or light jog. Conversational pace throughout.',0],
     ]},
   },
 };
@@ -610,6 +611,22 @@ function calculateOverload(ex,lastLog){
   return {suggestedWeight:suggestion,reason:reason};
 }
 
+function shortReps(reps){
+  // Shorten long rep descriptions for the small meta display
+  // "10 reps per leg (20 total)" → "10/side"
+  // "10 reps per arm (20 total)" → "10/side"
+  // "10 reps per side (20 total)" → "10/side"
+  // "5 reps each set" → "5"
+  // Keep short formats as-is
+  var m=reps.match(/^(\d+)\s+reps?\s+per\s+(leg|arm|side)/);
+  if(m)return m[1]+'/side';
+  var m2=reps.match(/^(\d+)\s+reps?\s+each/);
+  if(m2)return m2[1];
+  var m3=reps.match(/^(\d+)\s+per\s+(interval|set)/);
+  if(m3)return m3[1];
+  return reps;
+}
+
 function makeWx(wxKey,isTravel){
   var mode=isTravel?'travel':'home';
   var wx=WX[wxKey][mode];
@@ -670,7 +687,7 @@ function makeWx(wxKey,isTravel){
           (prevTxt?'<div class="ex-prev">'+prevTxt+'</div>':'')+
         '</div>'+
         '<div class="ex-meta">'+
-          '<div class="ex-sets">'+e[1]+' × '+e[2]+'</div>'+
+          '<div class="ex-sets">'+e[1]+' × '+shortReps(e[2])+'</div>'+
           (suggestedWt>0?'<div class="ex-prev" style="color:var(--teal);font-weight:700">'+suggestedWt+'lb</div>':'')+
         '</div>'+
       '</div>'+logPanel+
@@ -783,13 +800,26 @@ function render(){
     '</div>';
   }
 
-  // TRAVEL PLAN PROMPT ON SUNDAY
-  if(day===0&&planWeekKey!==weekKey()){
+  // TRAVEL PLAN PROMPT ON SUNDAY — always visible, shows current state
+  if(day===0){
+    var travelDaysThisWeek=[];
+    for(var td=0;td<7;td++)if(travelPlan[td])travelDaysThisWeek.push(DSHORT[td]);
+    var pTitle,pSub;
+    if(planWeekKey!==weekKey()){
+      pTitle='Plan your week — travel days?';
+      pSub='Tap to mark any days you\'ll be on the road this week. Takes 20 seconds.';
+    } else if(travelDaysThisWeek.length===0){
+      pTitle='Week plan: all home this week';
+      pSub='Tap to update if travel plans change.';
+    } else {
+      pTitle='Week plan: traveling '+travelDaysThisWeek.join(', ');
+      pSub='Tap to add/remove travel days.';
+    }
     out+='<div class="plan-prompt" onclick="openPlanner()">'+
       '<div class="pp-icon">&#9992;</div>'+
       '<div class="pp-body">'+
-        '<div class="pp-title">Plan your week — travel days?</div>'+
-        '<div class="pp-sub">Tap to mark any days you\'ll be on the road this week. Takes 20 seconds.</div>'+
+        '<div class="pp-title">'+pTitle+'</div>'+
+        '<div class="pp-sub">'+pSub+'</div>'+
       '</div>'+
     '</div>';
   }
@@ -1042,6 +1072,12 @@ function openPlanner(){
   document.getElementById('overlay-planner').classList.add('open');
 }
 function closePlanner(){document.getElementById('overlay-planner').classList.remove('open');}
+function confirmPlan(){
+  planWeekKey=weekKey();
+  save();
+  closePlanner();
+  render();
+}
 function renderPlanner(){
   var grid=document.getElementById('planner-grid');
   var html='';
@@ -1058,9 +1094,6 @@ function renderPlanner(){
     })(i);
   }
   grid.innerHTML=html;
-  // save the week key so we know they've been through the planner
-  planWeekKey=weekKey();
-  save();
 }
 
 // ─── INIT ────────────────────────────────────────────────────────────────────
