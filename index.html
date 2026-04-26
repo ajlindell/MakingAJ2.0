@@ -201,11 +201,20 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   const db = getFirestore(app);
   const provider = new GoogleAuthProvider();
 
-  // Expose to window for the main script
+  // Expose APIs for the main script (use try/popup first, fall back to redirect on mobile)
   window.fbAuth = auth;
   window.fbDb = db;
   window.fbProvider = provider;
-  window.fbSignIn = () => signInWithRedirect(auth, provider);
+  window.fbSignIn = async () => {
+    try {
+      // Try popup first - works on desktop and most mobile browsers
+      await signInWithPopup(auth, provider);
+    } catch (popupErr) {
+      console.warn('Popup signin failed, falling back to redirect:', popupErr.code);
+      // Fall back to redirect for mobile / blocked popups
+      await signInWithRedirect(auth, provider);
+    }
+  };
   window.fbSignOut = () => signOut(auth);
   window.fbOnAuth = (cb) => onAuthStateChanged(auth, cb);
   window.fbSetDoc = (path, data) => setDoc(doc(db, path), data, { merge: true });
@@ -213,12 +222,27 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   window.fbOnSnapshot = (path, cb) => onSnapshot(doc(db, path), (snap) => cb(snap.exists() ? snap.data() : null));
   window.fbServerTimestamp = serverTimestamp;
 
-  // Handle redirect result
-  getRedirectResult(auth).catch((err) => console.error('Redirect signin error:', err));
+  // Handle redirect result FIRST, before signaling ready
+  // This ensures onAuthStateChanged fires AFTER any pending sign-in is resolved
+  try {
+    const result = await getRedirectResult(auth);
+    if (result) {
+      console.log('Redirect sign-in completed:', result.user.email);
+    }
+  } catch (err) {
+    console.error('Redirect signin error:', err);
+    // Show error in UI
+    setTimeout(() => {
+      const status = document.getElementById('sync-status');
+      if (status) status.textContent = 'Sign-in error: ' + (err.code || err.message);
+    }, 1500);
+  }
 
-  // Signal that Firebase is ready
+  // Signal that Firebase is ready (after redirect resolved)
   window.fbReady = true;
   window.dispatchEvent(new Event('fb-ready'));
+  // Also call any pending callback that was waiting
+  if (window._pendingFbInit) window._pendingFbInit();
 </script>
 </head>
 <body>
@@ -596,16 +620,26 @@ function updateSyncStatus(text){
 
 function setupFirebaseSync(){
   if(!window.fbReady){
-    window.addEventListener('fb-ready',setupFirebaseSync);
+    // Register both an event listener AND a fallback callback
+    window.addEventListener('fb-ready',setupFirebaseSync,{once:true});
+    window._pendingFbInit=setupFirebaseSync;
     return;
   }
+  console.log('Firebase ready, setting up auth listener');
+  // Show pending state immediately
+  var statusEl=document.getElementById('sync-status');
+  if(statusEl)statusEl.textContent='Checking sign-in...';
   window.fbOnAuth(function(user){
+    console.log('Auth state changed. User:',user?user.email:'(signed out)');
     if(user){
       fbUser=user;
       // Show signed-in UI
-      document.getElementById('signin-prompt').style.display='none';
-      document.getElementById('signed-in-state').style.display='block';
-      document.getElementById('user-name').textContent=user.displayName||user.email||'Signed in';
+      var p=document.getElementById('signin-prompt');
+      var s=document.getElementById('signed-in-state');
+      if(p)p.style.display='none';
+      if(s)s.style.display='block';
+      var nameEl=document.getElementById('user-name');
+      if(nameEl)nameEl.textContent=user.displayName||user.email||'Signed in';
       var avatar=document.getElementById('user-avatar');
       if(user.displayName)avatar.textContent=user.displayName.charAt(0).toUpperCase();
       updateSyncStatus('Connecting...');
