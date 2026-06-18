@@ -107,6 +107,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .ex-meta{text-align:right;min-width:80px;flex-shrink:0}
 .ex-sets{font-size:13px;font-weight:700;color:var(--teal)}
 .ex-prev{font-size:10px;color:var(--muted);margin-top:2px}
+.ex-plates{font-size:10px;color:var(--amber);font-weight:700;margin-top:2px;line-height:1.4}
 .ex-log{display:none;padding:12px 14px;background:var(--gray);border-top:1px solid var(--grayM)}
 .ex-log.open{display:block}
 .log-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:6px}
@@ -120,6 +121,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .log-field input{width:100%;padding:9px 4px;border-radius:8px;border:1.5px solid var(--grayM);font-size:16px;font-weight:700;color:var(--dark);background:var(--card);text-align:center;outline:none;-webkit-appearance:none}
 .log-field input:focus{border-color:var(--tealM)}
 .po-preview{font-size:12px;padding:8px 10px;border-radius:8px;background:var(--tealL);color:var(--teal);margin-bottom:10px;line-height:1.5;font-weight:600}
+.plates-preview{font-size:12px;padding:8px 10px;border-radius:8px;background:var(--amberL);color:var(--amber);margin-bottom:10px;line-height:1.5;font-weight:600}
 .po-preview.hidden{display:none}
 .log-save{width:100%;padding:10px;border-radius:9px;background:var(--teal);color:#fff;font-size:13px;font-weight:700;border:none;cursor:pointer}
 .rec-card{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-radius:10px;background:var(--card);border:1px solid var(--bdr);margin-bottom:5px;cursor:pointer;user-select:none;transition:all .12s}
@@ -201,17 +203,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   const db = getFirestore(app);
   const provider = new GoogleAuthProvider();
 
-  // Expose APIs for the main script (use try/popup first, fall back to redirect on mobile)
   window.fbAuth = auth;
   window.fbDb = db;
   window.fbProvider = provider;
   window.fbSignIn = async () => {
     try {
-      // Try popup first - works on desktop and most mobile browsers
       await signInWithPopup(auth, provider);
     } catch (popupErr) {
       console.warn('Popup signin failed, falling back to redirect:', popupErr.code);
-      // Fall back to redirect for mobile / blocked popups
       await signInWithRedirect(auth, provider);
     }
   };
@@ -222,26 +221,19 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   window.fbOnSnapshot = (path, cb) => onSnapshot(doc(db, path), (snap) => cb(snap.exists() ? snap.data() : null));
   window.fbServerTimestamp = serverTimestamp;
 
-  // Handle redirect result FIRST, before signaling ready
-  // This ensures onAuthStateChanged fires AFTER any pending sign-in is resolved
   try {
     const result = await getRedirectResult(auth);
-    if (result) {
-      console.log('Redirect sign-in completed:', result.user.email);
-    }
+    if (result) console.log('Redirect sign-in completed:', result.user.email);
   } catch (err) {
     console.error('Redirect signin error:', err);
-    // Show error in UI
     setTimeout(() => {
       const status = document.getElementById('sync-status');
       if (status) status.textContent = 'Sign-in error: ' + (err.code || err.message);
     }, 1500);
   }
 
-  // Signal that Firebase is ready (after redirect resolved)
   window.fbReady = true;
   window.dispatchEvent(new Event('fb-ready'));
-  // Also call any pending callback that was waiting
   if (window._pendingFbInit) window._pendingFbInit();
 </script>
 </head>
@@ -387,120 +379,149 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 </div>
 
 <script>
-// ─── CONFIG ──────────────────────────────────────────────────────────────────
+// ─── CONFIG ───────────────────────────────────────────────────────────────────
 var DNAMES=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 var DSHORT=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 
-// Weekly schedule: Sat + Sun are locked lifting days (home-only)
-// Tue Thu are lifting days at home, Wed is cardio, Fri is HIIT, Mon is rest/flex
 var CFG={
-  0:{type:'Full body strength',isT:true, isH:false,wx:'fullbody', lockHome:true},
-  1:{type:'Rest / flex day',   isT:false,isH:false,wx:null,       lockHome:false},
-  2:{type:'Upper body strength',isT:true,isH:false,wx:'upper',    lockHome:false},
-  3:{type:'Cardio power day',  isT:true, isH:false,wx:'cardio',   lockHome:false},
-  4:{type:'Rest / flex day',   isT:false,isH:false,wx:null,       lockHome:false},
-  5:{type:'HIIT power day',    isT:true, isH:true, wx:'hiit',     lockHome:false},
-  6:{type:'Lower body strength',isT:true,isH:false,wx:'lower',    lockHome:true},
+  0:{type:'Full body strength',  isT:true, isH:false,wx:'fullbody',lockHome:true},
+  1:{type:'Rest / flex day',     isT:false,isH:false,wx:null,      lockHome:false},
+  2:{type:'Upper body strength', isT:true, isH:false,wx:'upper',   lockHome:false},
+  3:{type:'Cardio power day',    isT:true, isH:false,wx:'cardio',  lockHome:false},
+  4:{type:'Rest / flex day',     isT:false,isH:false,wx:null,      lockHome:false},
+  5:{type:'Power conditioning',  isT:true, isH:false,wx:'hiit',    lockHome:false},
+  6:{type:'Lower body strength', isT:true, isH:false,wx:'lower',   lockHome:true},
 };
-// Saturday becomes Lower body (heavy legs when you're home + rested)
-// Sunday becomes Full body (sets up Monday rest)
 
-// ─── WORKOUTS — HOME + TRAVEL VERSIONS ───────────────────────────────────────
-// Each exercise: [name, sets, reps, note, default_weight]
+// ─── PLATE MATH ───────────────────────────────────────────────────────────────
+// BAR = 45 lbs. Returns a string showing plates needed per side.
+// Available fractional plates: 0.25, 0.5, 1.25, 2.5 lb
+// Standard plates: 5, 10, 25, 35, 45 lb
+function calcPlates(totalLbs){
+  if(!totalLbs||totalLbs<=0)return null;
+  var perSide=(totalLbs-45)/2;
+  if(perSide<=0)return perSide===0?'bar only (45 lb)':null;
+  var plates=[45,35,25,10,5,2.5,1.25,0.5,0.25];
+  var result=[];
+  var rem=perSide;
+  for(var i=0;i<plates.length;i++){
+    var count=Math.floor(rem/plates[i]+0.0001);
+    if(count>0){
+      result.push(count===1?plates[i]+'':count+'×'+plates[i]);
+      rem-=count*plates[i];
+      rem=Math.round(rem*10000)/10000;
+    }
+  }
+  if(rem>0.01)return null;
+  return result.length?result.join(' + ')+' per side':'bar only (45 lb)';
+}
+
+function platesHTML(wt){
+  if(!wt||wt===0)return '';
+  var p=calcPlates(wt);
+  if(!p)return '';
+  return '<div class="ex-plates">🏋️ '+p+'</div>';
+}
+
+// ─── WORKOUTS ─────────────────────────────────────────────────────────────────
+// [name, sets, reps, note, default_weight]
 var WX={
   lower:{
     home:{name:'Lower body strength',sub:'Home — squat rack focus',ex:[
-      ['Goblet squat warm-up','2','12','20lb DB at chest. Deep, slow descent (3 sec down). Rest 60 sec between sets. Opens hips for squatting.',20],
+      ['Goblet squat warm-up','2','12','20lb DB at chest. Deep, slow descent (3 sec down). Opens hips for squatting. Rest 60 sec.',20],
       ['Back squat — warm-up','1','8','Bar only (45 lb). Full depth, slow. Groove the pattern. Rest 90 sec before working sets.',45],
-      ['Back squat — working sets','4','4-6','Focus: brace hard, drive knees out, control descent (2 sec down, explosive up). Rest 2.5-3 min between sets. Do not rush.',115],
-      ['Romanian deadlift','4','8-10','Focus: hip hinge with soft knee, bar stays close to legs, feel hamstring stretch at bottom. Control descent (3 sec). Rest 2 min between sets.',95],
-      ['Bulgarian split squat','3','10 reps per leg (20 total)','Rear foot elevated on bench. Do all 10 reps on one leg, then switch. Slow descent, pause at bottom. Rest 90 sec after both legs done.',30],
-      ['Glute bridge','3','15','Bodyweight or barbell on hips. Squeeze glutes hard at top, 1 sec pause. Rest 60 sec between sets.',0],
-      ['Plank hold','3','45 sec','Straight line head to heels. Squeeze glutes and core. Rest 60 sec between sets.',0],
+      ['Back squat — working sets','4','4-6','Brace hard, drive knees out, control descent (2 sec down, explosive up). Use safeties. Rest 2.5-3 min.',115],
+      ['Romanian deadlift','4','8-10','Hip hinge with soft knee, bar stays close to legs, feel hamstring stretch at bottom. 3 sec descent. Rest 2 min.',95],
+      ['Bulgarian split squat','3','10 reps per leg','Rear foot elevated on bench. Slow descent, pause at bottom. Do all 10 one leg then switch. Rest 90 sec after both.',30],
+      ['Glute bridge','3','15','Bodyweight or barbell on hips. Squeeze glutes hard at top, 1 sec pause. Rest 60 sec.',0],
+      ['Plank hold','3','45 sec','Straight line head to heels. Squeeze glutes and core. Rest 60 sec.',0],
     ]},
     travel:{name:'Lower body — hotel',sub:'Marriott gym — DBs + bench',ex:[
-      ['Goblet squat warm-up','2','12','Heaviest DB hotel has at chest. Deep, slow (3 sec down). Rest 60 sec between sets.',30],
-      ['DB goblet squat — working','4','8-10','Focus: slow eccentric (3-4 sec down), pause 1 sec at bottom, drive up. Use heaviest DB (typically 45-50lb at Marriotts). Rest 2 min between sets.',50],
-      ['DB Romanian deadlift','4','8-10','Two DBs at sides. Hip hinge, soft knee, DBs slide down legs. Slow descent (3 sec), feel hamstring stretch. Rest 2 min between sets.',45],
-      ['Walking lunge — DBs','3','10 reps per leg (20 total)','DBs at sides. Long strides down the gym floor. Back knee nearly touches. Alternate legs. Rest 90 sec between sets.',30],
-      ['DB step-up on bench','3','10 reps per leg (20 total)','Step fully onto bench with one foot, drive up. Do all 10 reps one leg, then switch. Rest 90 sec after both legs done.',25],
+      ['Goblet squat warm-up','2','12','Heaviest DB at chest. Deep, slow (3 sec down). Rest 60 sec.',30],
+      ['DB goblet squat — working','4','8-10','Slow eccentric (3-4 sec down), pause 1 sec at bottom, drive up. Use heaviest DB available. Rest 2 min.',50],
+      ['DB Romanian deadlift','4','8-10','Two DBs at sides. Hip hinge, soft knee, DBs slide down legs. 3 sec descent. Rest 2 min.',45],
+      ['Walking lunge — DBs','3','10 reps per leg','DBs at sides. Long strides. Back knee nearly touches. Alternate legs. Rest 90 sec.',30],
+      ['DB step-up on bench','3','10 reps per leg','Step fully onto bench, drive up. Do all 10 one leg then switch. Rest 90 sec after both.',25],
       ['Glute bridge','3','15','Bodyweight on floor. Squeeze glutes at top, 1 sec pause. Rest 60 sec.',0],
-      ['Plank hold','3','45 sec','Straight line. Squeeze core. Rest 60 sec between sets.',0],
+      ['Plank hold','3','45 sec','Straight line. Squeeze core. Rest 60 sec.',0],
     ]},
   },
   upper:{
     home:{name:'Upper body strength',sub:'Home — barbell focus',ex:[
-      ['Bench press warm-up','2','8','Build to working weight (set 1 @ 50%, set 2 @ 70%). Controlled tempo. Rest 90 sec.',45],
-      ['Bench press — working sets','4','4-6','Focus: feet planted, shoulder blades retracted, controlled descent to lower chest (2 sec down), explosive press. Use safety bars. Rest 2.5-3 min between sets.',115],
-      ['Barbell bent-over row','4','6-8','Overhand grip, 45° hinge with flat back. Pull bar to lower sternum, squeeze shoulder blades. Rest 2 min between sets.',95],
-      ['Incline DB press','3','10-12','Bench at 45°. Full stretch at bottom, controlled up. Rest 90 sec between sets.',30],
-      ['DB rear delt fly','3','12-15','Focus: hinge forward at hips, arms slightly bent, squeeze shoulder blades together. Slow controlled return. Rest 60 sec between sets.',15],
-      ['DB lateral raise','3','15','Focus: slight elbow bend, lead with elbows (not hands), stop at shoulder height. Slow descent (3 sec down). Rest 60 sec between sets.',15],
-      ['DB overhead tricep ext','3','12','Single DB held overhead with both hands. Lower slowly behind head (3 sec), elbows tight. Rest 60 sec between sets.',20],
+      ['Bench press warm-up','2','8','Set 1 @ 50%, set 2 @ 70% of working weight. Controlled tempo. Rest 90 sec.',45],
+      ['Bench press — working sets','4','4-6','Feet planted, shoulder blades retracted, 2 sec descent to lower chest, explosive press. Use safeties. Rest 2.5-3 min.',115],
+      ['Barbell bent-over row','4','6-8','Overhand grip, 45° hinge with flat back. Pull bar to lower sternum, squeeze shoulder blades. Rest 2 min.',95],
+      ['Incline DB press','3','10-12','Bench at 45°. Full stretch at bottom, controlled up. Rest 90 sec.',30],
+      ['DB rear delt fly','3','12-15','Hinge forward at hips, arms slightly bent, squeeze shoulder blades. Slow controlled return. Rest 60 sec.',15],
+      ['DB lateral raise','3','15','Slight elbow bend, lead with elbows (not hands), stop at shoulder height. 3 sec descent. Rest 60 sec.',15],
+      ['DB overhead tricep ext','3','12','Single DB overhead with both hands. Lower slowly behind head (3 sec), elbows tight. Rest 60 sec.',20],
     ]},
     travel:{name:'Upper body — hotel',sub:'Marriott gym — DBs + bench',ex:[
       ['DB bench press warm-up','2','10','Light to moderate DBs. Controlled tempo. Rest 90 sec.',25],
-      ['DB flat bench press — working','4','6-8','Focus: controlled descent (2 sec), full chest stretch, press up powerfully. Heaviest DBs available. Rest 2 min between sets.',50],
-      ['DB bent-over row','4','8-10','Two DBs, 45° hinge, flat back. Pull to hips, squeeze shoulder blades. Rest 90 sec between sets.',45],
-      ['DB incline press','3','10-12','Set bench to incline if adjustable. Full stretch at bottom. Rest 90 sec between sets.',35],
-      ['DB rear delt fly','3','12-15','Hinge forward, slow squeeze at top, controlled return. Rest 60 sec between sets.',15],
-      ['DB lateral raise','3','15','Slight elbow bend, lead with elbows. Slow 3 sec descent. Rest 60 sec between sets.',15],
-      ['DB skull crusher','3','12','Lie on bench, DB to forehead (3 sec descent), extend to lockout. Elbows stay pointed up. Rest 60 sec between sets.',20],
+      ['DB flat bench press — working','4','6-8','2 sec descent, full chest stretch, press powerfully. Heaviest DBs available. Rest 2 min.',50],
+      ['DB bent-over row','4','8-10','Two DBs, 45° hinge, flat back. Pull to hips, squeeze shoulder blades. Rest 90 sec.',45],
+      ['DB incline press','3','10-12','Set bench to incline. Full stretch at bottom. Rest 90 sec.',35],
+      ['DB rear delt fly','3','12-15','Hinge forward, slow squeeze at top, controlled return. Rest 60 sec.',15],
+      ['DB lateral raise','3','15','Slight elbow bend, lead with elbows. 3 sec descent. Rest 60 sec.',15],
+      ['DB skull crusher','3','12','Lie on bench, DB to forehead (3 sec descent), extend to lockout. Elbows stay pointed up. Rest 60 sec.',20],
     ]},
   },
   cardio:{
     home:{name:'Cardio power day',sub:'Home — rower + SkiErg',ex:[
-      ['Concept2 rower warm-up','1','5 min','Damper 4-5. Easy pace. Drive sequence: legs → hips → arms. No rest needed before intervals.',0],
-      ['Rower intervals — 500m','6','500m per interval','Hard effort — consistent 500m split across all 6. Rest 90 sec between intervals. Record split time for tracking.',0],
+      ['Concept2 rower warm-up','1','5 min','Damper 4-5. Easy pace. Drive sequence: legs → hips → arms.',0],
+      ['Rower intervals — 500m','6','500m per interval','Hard effort — consistent split across all 6. Rest 90 sec between. Record split time.',0],
       ['Rower cool-down','1','3 min','Easy pace to flush legs. Rest 2 min before SkiErg.',0],
       ['SkiErg warm-up','1','3 min','Arms-only first minute, then full body pull. Rest 60 sec before intervals.',0],
-      ['SkiErg 30s intervals','8','30 sec on / 30 sec off','Full effort on every pull. Rest 30 sec between. Record average pace. This taxes lats, triceps, core.',0],
+      ['SkiErg 30s intervals','8','30 sec on / 30 sec off','Full effort on every pull. Record average pace.',0],
       ['SkiErg cool-down','1','2 min','Easy pace.',0],
-      ['Hip flexor stretch — kneeling','2','60 sec per side (2 min total)','Kneeling lunge position, push hips forward, feel stretch in front of back leg. Switch sides. Rest 30 sec.',0],
-      ['Thoracic rotation','2','10 reps per side (20 total)','Seated or quadruped. Rotate upper back, open chest. Controlled. Rest 30 sec.',0],
+      ['Hip flexor stretch — kneeling','2','60 sec per side','Kneeling lunge, push hips forward. Switch sides. Rest 30 sec.',0],
+      ['Thoracic rotation','2','10 reps per side','Seated or quadruped. Rotate upper back, open chest. Rest 30 sec.',0],
     ]},
     travel:{name:'Cardio — hotel',sub:'Marriott — treadmill + elliptical',ex:[
       ['Treadmill warm-up walk','1','5 min','3.0-3.5 mph flat. Easy pace.',0],
-      ['Treadmill intervals','8','1 min hard / 1 min easy','Hard pace = 4.5-6 mph OR 4-8% incline walk at 3.5-4 mph. Record your working pace for next time.',0],
-      ['Treadmill cool-down','1','5 min','Easy walk 3.0 mph, flat. Rest 2 min before elliptical.',0],
-      ['Elliptical or bike intervals','6','30 sec hard / 30 sec easy','Max resistance on hard 30s. Skip if no elliptical — just extend treadmill section.',0],
+      ['Treadmill intervals','8','1 min hard / 1 min easy','Hard = 4.5-6 mph OR 4-8% incline at 3.5-4 mph. Record working pace.',0],
+      ['Treadmill cool-down','1','5 min','Easy walk 3.0 mph, flat. Rest 2 min.',0],
+      ['Elliptical or bike intervals','6','30 sec hard / 30 sec easy','Max resistance on hard 30s. Skip if no elliptical.',0],
       ['Elliptical cool-down','1','3 min','Light resistance.',0],
-      ['Hip flexor stretch — kneeling','2','60 sec per side (2 min total)','Switch sides between sets. Rest 30 sec.',0],
-      ['Thoracic rotation','2','10 reps per side (20 total)','Controlled rotations. Rest 30 sec.',0],
+      ['Hip flexor stretch — kneeling','2','60 sec per side','Switch sides. Rest 30 sec.',0],
+      ['Thoracic rotation','2','10 reps per side','Controlled rotations. Rest 30 sec.',0],
     ]},
   },
   hiit:{
-    home:{name:'HIIT power day',sub:'Home — assault bike + plyo',ex:[
-      ['Assault bike warm-up','1','5 min','Relaxed pace. Get comfortable with bike handles.',0],
-      ['Assault bike Tabata','2 sets','8 rounds of 20s max / 10s rest','Signature burst athlete protocol. Max effort every 20s round. 3 min rest BETWEEN the 2 sets. Record average watts per set.',0],
-      ['Assault bike cool-down','1','5 min','Easy pace. Rest 2 min before box jumps.',0],
-      ['Box jumps — STEP DOWN always','5','5 jumps per set','Jump up explosively, STEP DOWN carefully (never jump down). Full reset between reps. Rest 90 sec-2 min between sets.',0],
-      ['Kettlebell swing','4','15','Heaviest KB available. Explosive hip drive (not a squat). KB comes to eye level from hips. Rest 60 sec between sets.',0],
+    home:{name:'Power conditioning',sub:'Home — treadmill intervals + barbell complex + KB',ex:[
+      ['Treadmill warm-up','1','5 min','3.5 mph, flat. Get loose. Transition straight to intervals.',0],
+      ['Treadmill incline intervals','5','2 min hard / 90 sec easy','Hard = 8-12% incline at 3.5-4 mph. Easy = flat 3.0 mph. Record your incline + speed each round.',0],
+      ['Treadmill cool-down','1','3 min','Flat, easy walk. Step off and rest 3 min before barbell complex.',0],
+      ['Barbell complex — round 1','1','6 reps each movement','All 6 movements back-to-back WITHOUT putting bar down. Sequence: Deadlift → Hang clean → Front squat → Press → Back squat → Good morning. Light weight — form matters. Rest 3 min after.',65],
+      ['Barbell complex — round 2','1','6 reps each movement','Same sequence as round 1. Go heavier only if round 1 felt controlled. Rest 3 min after.',65],
+      ['Barbell complex — round 3','1','6 reps each movement','Same sequence. Match or increase weight from round 2 if form held. Rest 3 min after.',65],
+      ['Kettlebell swing','4','15','Heaviest KB. Explosive hip drive — this is NOT a squat. KB comes to eye level from hips, arms passive. Rest 60 sec.',0],
     ]},
-    travel:{name:'HIIT — hotel',sub:'Marriott — treadmill/bike Tabatas',ex:[
-      ['Treadmill or bike warm-up','1','5 min','Easy pace.',0],
-      ['Treadmill Tabata sprints','2 sets','8 rounds of 20s max / 10s step-off','Max sprint speed 7-9 mph OR 12-15% incline walk. Step feet onto side rails during 10s rest (do not change treadmill settings). 3 min rest BETWEEN the 2 sets.',0],
-      ['Bike Tabata (if available)','1 set','8 rounds of 20s max / 10s rest','Stationary bike. Max resistance during 20s. Skip if gym has no bike.',0],
-      ['DB thruster','4','10','Moderate DBs at shoulders. Squat then explosively press DBs overhead. Rest 75 sec between sets.',25],
-      ['Bodyweight jump squat','4','10','Controlled. Land SOFTLY with bent knees. Rest 60 sec between sets.',0],
-      ['DB swing','4','15','Two-handed between legs OR single arm. Heaviest available DB. Explosive hip drive. Rest 60 sec.',35],
+    travel:{name:'Power conditioning — hotel',sub:'Marriott — treadmill + DB complex + KB',ex:[
+      ['Treadmill warm-up','1','5 min','3.5 mph, flat.',0],
+      ['Treadmill incline intervals','5','2 min hard / 90 sec easy','Hard = 8-12% incline at 3.5-4 mph. Easy = flat 3.0 mph. Record each round.',0],
+      ['Treadmill cool-down','1','3 min','Flat, easy walk. Rest 3 min before DB complex.',0],
+      ['DB complex — round 1','1','8 reps each movement','Back-to-back WITHOUT putting DBs down. Sequence: Romanian deadlift → Hang clean → Front squat → Press → Reverse lunge (4/side) → Bent-over row. Rest 3 min after.',25],
+      ['DB complex — round 2','1','8 reps each movement','Same sequence. Match or go slightly heavier if round 1 was controlled. Rest 3 min after.',25],
+      ['DB complex — round 3','1','8 reps each movement','Same sequence. Match round 2. Rest 3 min after.',25],
+      ['DB swing','4','15','Two-handed DB between legs. Explosive hip drive. Heaviest available. Rest 60 sec.',35],
     ]},
   },
   fullbody:{
     home:{name:'Full body + zone 2',sub:'Home — deadlift + OHP',ex:[
       ['Deadlift warm-up','3','5 reps each set','40% / 60% / 80% of working weight. Rest 60-90 sec between warm-up sets.',0],
-      ['Conventional deadlift','3','5','Focus: feet hip-width, bar over mid-foot, neutral spine, drive through heels. Reset between each rep. Rest 3 min between sets.',135],
-      ['Standing barbell OHP','4','6-8','From rack at shoulder height. Brace core, press straight up to full lockout overhead. Rest 2 min between sets.',65],
-      ['DB curl','3','12','Focus: SLOW controlled contraction (2 sec up), squeeze biceps at top, slow descent (3 sec down). No swinging. Rest 60 sec (supersetted with single-arm row).',25],
-      ['DB single-arm row','3','10 reps per arm (20 total)','Brace one knee + hand on bench. Pull DB to hip, squeeze shoulder blade. Do all 10 reps one arm, switch. Rest 90 sec after both arms done.',70],
-      ['Zone 2 finisher','1','15 min','Rower or assault bike. Conversational pace (could hold a conversation). APOE4 brain health cardio.',0],
+      ['Conventional deadlift','3','5','Feet hip-width, bar over mid-foot, neutral spine, drive through heels. Reset between reps. Rest 3 min.',135],
+      ['Standing barbell OHP','4','6-8','From rack at shoulder height. Brace core, press to full lockout overhead. Rest 2 min.',65],
+      ['DB curl','3','12','SLOW contraction (2 sec up), squeeze at top, slow descent (3 sec down). No swinging. Rest 60 sec.',25],
+      ['DB single-arm row','3','10 reps per arm','Brace one knee + hand on bench. Pull DB to hip, squeeze shoulder blade. All 10 one arm, switch. Rest 90 sec.',70],
+      ['Zone 2 finisher','1','15 min','Rower or assault bike. Conversational pace. APOE4 brain health cardio.',0],
     ]},
     travel:{name:'Full body — hotel',sub:'Marriott — DBs + treadmill',ex:[
-      ['DB squat warm-up','2','10','Moderate DBs at sides or goblet. Controlled tempo. Rest 60 sec between sets.',30],
-      ['DB Romanian deadlift','4','8-10','Two DBs. Hip hinge with soft knee, DBs slide down legs. Slow descent (3 sec). Rest 2 min between sets.',50],
-      ['DB overhead press','4','8','Seated on bench for stability. Strict — no leg drive. Press to full lockout. Rest 2 min between sets.',35],
-      ['DB curl','3','12','SLOW controlled contraction (2 sec up, 3 sec down). Squeeze at top. Rest 60 sec (supersetted with row).',25],
-      ['DB single-arm row','3','10 reps per arm (20 total)','Brace one knee + hand on bench. Pull DB to hip. Switch arms after 10 reps. Rest 90 sec after both arms done.',50],
+      ['DB squat warm-up','2','10','Moderate DBs at sides or goblet. Controlled tempo. Rest 60 sec.',30],
+      ['DB Romanian deadlift','4','8-10','Two DBs. Hip hinge, soft knee, DBs slide down legs. 3 sec descent. Rest 2 min.',50],
+      ['DB overhead press','4','8','Seated on bench. Strict — no leg drive. Press to full lockout. Rest 2 min.',35],
+      ['DB curl','3','12','SLOW contraction (2 sec up, 3 sec down). Squeeze at top. Rest 60 sec.',25],
+      ['DB single-arm row','3','10 reps per arm','Brace one knee + hand on bench. Pull DB to hip. All 10 one arm, switch. Rest 90 sec.',50],
       ['Treadmill zone 2','1','15 min','Brisk walk 3.5-4 mph or light jog. Conversational pace throughout.',0],
     ]},
   },
@@ -512,23 +533,23 @@ var MEALS={
   bf_travel:{time:'Breakfast — travel',title:'Hotel breakfast strategy — ~500 cal / ~45g protein',items:['Priority: scrambled eggs (3-4) + smoked salmon if at hotel buffet','Avoid: pastries, waffles, sugary yogurts, hotel pancakes','Backup: protein shake (2 scoops whey isolate + water or almond milk)','Berries or small bowl of GF oats if available','Skip bacon/sausage — keep saturated fat low (APOE4 + ACE)'],rule:'Hotel breakfast is a landmine for your genetics. Default to eggs + salmon + fruit. Everything else skip.'},
   lunch_a:{time:'12:30 pm',title:'Lunch — ~650 cal / ~55g protein (largest meal)',items:['6-7 oz grilled chicken or salmon','3/4 cup lentils or black beans — cooled and reheated','Large mixed greens salad: spinach, arugula, cucumber','1/2 avocado','1/2 cup broccoli or broccoli sprouts','Olive oil + lemon dressing only','16 oz water minimum'],rule:'Largest meal. Protein first. Cool and reheat legumes for resistant starch.'},
   lunch_r:{time:'12:30 pm',title:'Lunch — ~600 cal / ~50g protein',items:['6 oz chicken or salmon','3/4 cup lentils or black beans (cooled + reheated)','Large salad + olive oil + lemon + 1/2 avocado','1/2 cup broccoli sprouts'],rule:'Rest day — reduce carbs ~30-40g. Protein stays the same.'},
-  lunch_travel:{time:'12:30 pm',title:'Lunch — travel strategy',items:['Target: large salad with grilled chicken, salmon, or hard-boiled eggs','Dressing: olive oil + lemon if available, otherwise skip dressing','Avoid: sandwiches (wheat), pasta salads, fried proteins, creamy dressings','Backup: Chipotle bowl (double chicken, black beans, veggies, guac, no rice/tortilla)','Aim for 50g+ protein even when eating out'],rule:'Protein and greens first. Assume restaurant food is higher sodium — drink extra water.'},
-  pre:{time:'5:00 pm',title:'Pre-workout snack (optional)',items:['Option A: Plain full-fat Greek yogurt + walnuts (~17g protein)','Option B: 2 hard-boiled eggs + 1 oz almonds','Option C: Skip entirely — trust tirzepatide'],rule:'Only if genuinely hungry. HIIT day: keep very light or skip.'},
+  lunch_travel:{time:'12:30 pm',title:'Lunch — travel strategy',items:['Target: large salad with grilled chicken, salmon, or hard-boiled eggs','Dressing: olive oil + lemon if available, otherwise skip','Avoid: sandwiches (wheat), pasta salads, fried proteins, creamy dressings','Backup: Chipotle bowl (double chicken, black beans, veggies, guac, no rice/tortilla)','Aim for 50g+ protein even when eating out'],rule:'Protein and greens first. Assume restaurant food is higher sodium — drink extra water.'},
+  pre:{time:'5:00 pm',title:'Pre-workout snack (optional)',items:['Option A: Plain full-fat Greek yogurt + walnuts (~17g protein)','Option B: 2 hard-boiled eggs + 1 oz almonds','Option C: Skip entirely — trust tirzepatide'],rule:'Only if genuinely hungry. Power conditioning day: keep very light or skip.'},
   shake:{time:'7:15 pm',title:'Post-workout shake — ~390 cal / ~50g protein',items:['2 scoops whey isolate (~50g protein)','1/2 cup frozen blueberries + 1 handful baby spinach','8-10 oz unsweetened almond milk','1/2 small frozen banana + 1 tsp chia + 1/4 tsp cinnamon'],rule:'Within 20-30 min of finishing training. Non-negotiable anabolic window.'},
   shake_travel:{time:'7:15 pm',title:'Post-workout shake — travel version',items:['2 scoops whey isolate + water or almond milk (if available)','Pack in a shaker bottle — easiest travel supplement','Skip the frozen fruit additions on the road — just the protein'],rule:'Bring single-serving whey packets or a travel shaker bottle in your carry-on.'},
   din_t:{time:'7:45 pm',title:'Dinner — ~475 cal / ~40g protein',items:['5-6 oz baked salmon or skinless chicken thigh','2 cups roasted vegetables in olive oil + garlic','1/2 cup sweet potato (cooled then reheated) or 1/3 cup brown rice'],rule:'Kitchen closes 8:30 pm. Herbal tea only after (chamomile, passionflower, lemon balm).'},
   din_r:{time:'7:00 pm',title:'Dinner — ~450 cal / ~40g protein',items:['5 oz salmon or chicken + 2 cups roasted vegetables','Small portion sweet potato or skip carbs'],rule:'No post-workout shake today. Kitchen closes 8:30 pm.'},
-  din_travel:{time:'7:30 pm',title:'Dinner — travel strategy',items:['Best options: grilled salmon, steak (lean cut), chicken breast','Sides: double vegetables, sweet potato if on menu, skip bread basket','Avoid: pasta, risotto, creamy sauces, heavy fried foods','Drinks: water with lemon. Skip alcohol within 3 hrs of sleep (your sleep genetics)','Ask for vegetables cooked in olive oil, not butter (APOE4 + ACE)'],rule:'Most hotel restaurants can accommodate protein + veg + olive oil. Ask.'},
+  din_travel:{time:'7:30 pm',title:'Dinner — travel strategy',items:['Best options: grilled salmon, steak (lean cut), chicken breast','Sides: double vegetables, sweet potato if on menu, skip bread basket','Avoid: pasta, risotto, creamy sauces, heavy fried foods','Drinks: water with lemon. Skip alcohol within 3 hrs of sleep','Ask for vegetables cooked in olive oil, not butter (APOE4 + ACE)'],rule:'Most hotel restaurants can accommodate protein + veg + olive oil. Ask.'},
 };
 
 // ─── STATE ────────────────────────────────────────────────────────────────────
 var selDay=new Date().getDay();
 var TODAY=new Date().getDay();
-var checks={};        // date:id -> true
-var custom=[];        // custom supplement objects
-var exLog={};         // wxKey_exIndex_mode -> {sets,reps,weight,feel,date}
-var travelPlan={};    // dayIdx -> true (travel)
-var planWeekKey='';   // yyyy-ww key for this week's plan
+var checks={};
+var custom=[];
+var exLog={};
+var travelPlan={};
+var planWeekKey='';
 var weight=304;
 var START_WEIGHT=382;
 var hasEndDate=false;
@@ -557,11 +578,9 @@ function save(){
   localStorage.setItem('aj4_exlog',JSON.stringify(exLog));
   localStorage.setItem('aj4_travel',JSON.stringify({week:planWeekKey||weekKey(),plan:travelPlan}));
   localStorage.setItem('aj4_weight',weight);
-  // Sync to cloud if signed in
   cloudSave();
 }
 
-// Cloud sync state
 var fbUser=null;
 var fbSyncing=false;
 var fbSaveTimeout=null;
@@ -570,22 +589,11 @@ var fbIgnoreNextSnapshot=false;
 
 function cloudSave(){
   if(!fbUser||!window.fbSetDoc)return;
-  // Debounce — wait 800ms before pushing to cloud to batch rapid changes
   if(fbSaveTimeout)clearTimeout(fbSaveTimeout);
   fbSaveTimeout=setTimeout(function(){
     fbIgnoreNextSnapshot=true;
-    var data={
-      checks:checks,
-      custom:custom,
-      exLog:exLog,
-      travelPlan:travelPlan,
-      planWeekKey:planWeekKey||weekKey(),
-      weight:weight,
-      lastUpdated:Date.now(),
-      lastDevice:navigator.userAgent.indexOf('Mobile')>-1?'phone':'computer'
-    };
-    var path='users/'+fbUser.uid;
-    window.fbSetDoc(path,data).then(function(){
+    var data={checks:checks,custom:custom,exLog:exLog,travelPlan:travelPlan,planWeekKey:planWeekKey||weekKey(),weight:weight,lastUpdated:Date.now(),lastDevice:navigator.userAgent.indexOf('Mobile')>-1?'phone':'computer'};
+    window.fbSetDoc('users/'+fbUser.uid,data).then(function(){
       updateSyncStatus('Synced ✓');
     }).catch(function(err){
       console.error('Cloud save failed:',err);
@@ -596,14 +604,12 @@ function cloudSave(){
 
 function cloudLoad(remoteData){
   if(!remoteData)return;
-  // Apply remote data to local state and re-render
   if(remoteData.checks)checks=remoteData.checks;
   if(remoteData.custom)custom=remoteData.custom;
   if(remoteData.exLog)exLog=remoteData.exLog;
   if(remoteData.travelPlan)travelPlan=remoteData.travelPlan;
   if(remoteData.planWeekKey)planWeekKey=remoteData.planWeekKey;
   if(remoteData.weight)weight=remoteData.weight;
-  // Update localStorage to match
   localStorage.setItem('aj4_checks',JSON.stringify(checks));
   localStorage.setItem('aj4_custom',JSON.stringify(custom));
   localStorage.setItem('aj4_exlog',JSON.stringify(exLog));
@@ -620,47 +626,31 @@ function updateSyncStatus(text){
 
 function setupFirebaseSync(){
   if(!window.fbReady){
-    // Register both an event listener AND a fallback callback
     window.addEventListener('fb-ready',setupFirebaseSync,{once:true});
     window._pendingFbInit=setupFirebaseSync;
     return;
   }
-  console.log('Firebase ready, setting up auth listener');
-  // Show pending state immediately
   var statusEl=document.getElementById('sync-status');
   if(statusEl)statusEl.textContent='Checking sign-in...';
   window.fbOnAuth(function(user){
-    console.log('Auth state changed. User:',user?user.email:'(signed out)');
     if(user){
       fbUser=user;
-      // Show signed-in UI
-      var p=document.getElementById('signin-prompt');
-      var s=document.getElementById('signed-in-state');
-      if(p)p.style.display='none';
-      if(s)s.style.display='block';
+      document.getElementById('signin-prompt').style.display='none';
+      document.getElementById('signed-in-state').style.display='block';
       var nameEl=document.getElementById('user-name');
       if(nameEl)nameEl.textContent=user.displayName||user.email||'Signed in';
       var avatar=document.getElementById('user-avatar');
       if(user.displayName)avatar.textContent=user.displayName.charAt(0).toUpperCase();
       updateSyncStatus('Connecting...');
-      // Listen for real-time updates
-      var path='users/'+user.uid;
       if(fbSnapshotUnsub)fbSnapshotUnsub();
-      fbSnapshotUnsub=window.fbOnSnapshot(path,function(remoteData){
+      fbSnapshotUnsub=window.fbOnSnapshot('users/'+user.uid,function(remoteData){
         if(fbIgnoreNextSnapshot){fbIgnoreNextSnapshot=false;updateSyncStatus('Synced ✓');return;}
-        if(!remoteData){
-          // First sign-in on this account — push local data to cloud
-          updateSyncStatus('Initial sync...');
-          cloudSave();
-          return;
-        }
-        // Remote data exists — adopt it
+        if(!remoteData){updateSyncStatus('Initial sync...');cloudSave();return;}
         cloudLoad(remoteData);
         updateSyncStatus('Synced from another device ✓');
         setTimeout(function(){updateSyncStatus('Synced ✓');},2000);
       });
     } else {
-      // Signed out
       fbUser=null;
       if(fbSnapshotUnsub){fbSnapshotUnsub();fbSnapshotUnsub=null;}
       document.getElementById('signin-prompt').style.display='block';
@@ -668,7 +658,6 @@ function setupFirebaseSync(){
     }
   });
 }
-
 
 function selDate(){
   var d=new Date();
@@ -683,7 +672,6 @@ function toggleCk(id){
   save();render();
 }
 
-// ─── TRAVEL MODE ─────────────────────────────────────────────────────────────
 function isTravelDay(d){
   if(CFG[d]&&CFG[d].lockHome)return false;
   return !!travelPlan[d];
@@ -692,18 +680,13 @@ function toggleTravel(d){
   if(CFG[d].lockHome)return;
   if(travelPlan[d])delete travelPlan[d];else travelPlan[d]=true;
   planWeekKey=weekKey();
-  save();
-  renderPlanner();
-  render();
-  updateProgress();
+  save();renderPlanner();render();updateProgress();
 }
 
-// ─── CHECKMARK SVG ───────────────────────────────────────────────────────────
 function chkSVG(on){
   return '<div class="chk">'+(on?'<svg width="11" height="11" viewBox="0 0 11 11"><polyline points="1.5,5.5 4.5,8.5 9.5,2.5" stroke="white" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>':'')+'</div>';
 }
 
-// ─── ITEM BUILDERS ───────────────────────────────────────────────────────────
 function makeItem(id,name,dose,tags,note,noteClass){
   var on=isOn(id);
   var tagHTML=(tags||[]).map(function(t){return '<span class="tag '+t.c+'">'+t.t+'</span>';}).join('');
@@ -732,7 +715,6 @@ function makeMeal(meal){
     '<div class="meal-rule">'+meal.rule+'</div></div></div>';
 }
 
-// ─── BLOCK (COLLAPSIBLE TIME SECTION) ────────────────────────────────────────
 function makeBlock(pillTxt,pillClass,html,blockId){
   if(!html||!html.trim())return '';
   var bid=blockId||'blk_'+pillTxt.replace(/[^a-z0-9]/gi,'_');
@@ -750,23 +732,18 @@ function toggleBlock(bid){
   save();render();
 }
 
-// ─── WORKOUT WITH PROGRESSIVE OVERLOAD ───────────────────────────────────────
+// ─── WORKOUT RENDERING WITH PLATE MATH ───────────────────────────────────────
 function getExLogKey(wxKey,mode,idx){
-  // For DB exercises, use normalized exercise name so home/hotel share progression
-  // For home-only equipment (barbell, rower, bike, KB, etc), keep wxKey+mode+idx
   var ex=WX[wxKey]&&WX[wxKey][mode]&&WX[wxKey][mode].ex[idx];
   if(!ex)return wxKey+'_'+mode+'_'+idx;
   var name=ex[0].toLowerCase();
-  // DB-only exercises share progression across home/travel
   if(name.indexOf('db ')===0||name.indexOf(' db')>-1||name.indexOf('dumbbell')>-1||name.indexOf('goblet')>-1||name.indexOf('walking lunge')>-1){
     return 'shared_'+name.replace(/[^a-z0-9]/g,'_');
   }
-  // Everything else stays mode-specific
   return wxKey+'_'+mode+'_'+idx;
 }
 
 function parseRepRange(reps){
-  // returns [min,max] from strings like "4-6", "8-10", "15", "45 sec"
   var m=reps.match(/(\d+)\s*-\s*(\d+)/);
   if(m)return [parseInt(m[1]),parseInt(m[2])];
   var n=reps.match(/(\d+)/);
@@ -775,31 +752,22 @@ function parseRepRange(reps){
 }
 
 function calculateOverload(ex,lastLog){
-  // returns {suggestedWeight, reason} for next session
   if(!lastLog||!lastLog.weight)return null;
   var targetReps=parseRepRange(ex[2]);
   var actualReps=parseInt(lastLog.reps)||0;
   var lastWt=parseFloat(lastLog.weight)||0;
   var feel=lastLog.feel||'good';
   if(lastWt===0)return null;
-
-  // Only apply overload to weighted exercises (not cardio/time-based)
   if(ex[2].indexOf('min')>-1||ex[2].indexOf('sec')>-1)return null;
-
   var suggestion=lastWt;
   var reason='';
-
   if(actualReps>=targetReps[1]){
-    // Hit top of range
     if(feel==='easy'){suggestion=lastWt+5;reason='+5 lbs (hit top reps, felt easy)';}
     else if(feel==='good'){suggestion=lastWt+2.5;reason='+2.5 lbs (hit top reps, felt right)';}
     else if(feel==='hard'){suggestion=lastWt;reason='Stay — hit reps but struggled. Try again.';}
   } else if(actualReps<targetReps[0]){
-    // Missed bottom of range
-    suggestion=lastWt-5;
-    reason='-5 lbs (missed rep range last session)';
+    suggestion=lastWt-5;reason='-5 lbs (missed rep range last session)';
   } else {
-    // In range but not at top
     if(feel==='easy'){suggestion=lastWt+2.5;reason='+2.5 lbs (in rep range, felt easy)';}
     else{suggestion=lastWt;reason='Stay — work up to top of rep range';}
   }
@@ -807,12 +775,6 @@ function calculateOverload(ex,lastLog){
 }
 
 function shortReps(reps){
-  // Shorten long rep descriptions for the small meta display
-  // "10 reps per leg (20 total)" → "10/side"
-  // "10 reps per arm (20 total)" → "10/side"
-  // "10 reps per side (20 total)" → "10/side"
-  // "5 reps each set" → "5"
-  // Keep short formats as-is
   var m=reps.match(/^(\d+)\s+reps?\s+per\s+(leg|arm|side)/);
   if(m)return m[1]+'/side';
   var m2=reps.match(/^(\d+)\s+reps?\s+each/);
@@ -820,6 +782,16 @@ function shortReps(reps){
   var m3=reps.match(/^(\d+)\s+per\s+(interval|set)/);
   if(m3)return m3[1];
   return reps;
+}
+
+// Determine if an exercise uses a barbell (for plate math display)
+function isBarbellEx(exName){
+  var n=exName.toLowerCase();
+  return n.indexOf('barbell')>-1||n.indexOf('back squat')>-1||n.indexOf('deadlift')>-1||
+         n.indexOf('ohp')>-1||n.indexOf('overhead press')>-1||(n.indexOf('bench press')>-1&&n.indexOf('db')===-1)||
+         n.indexOf('bent-over row')>-1&&n.indexOf('db')===-1||
+         n.indexOf('good morning')>-1||n.indexOf('barbell complex')>-1||
+         n.indexOf('standing barbell')>-1||n.indexOf('barbell ohp')>-1||n.indexOf('barbell curl')>-1;
 }
 
 function makeWx(wxKey,isTravel){
@@ -840,7 +812,6 @@ function makeWx(wxKey,isTravel){
     var lastLog=exLog[logId]||null;
     var overload=calculateOverload(e,lastLog);
 
-    // Determine suggested weight for this session
     var suggestedWt=overload?overload.suggestedWeight:(lastLog?lastLog.weight:e[4]);
     if(!suggestedWt||suggestedWt===0)suggestedWt=e[4];
 
@@ -850,14 +821,22 @@ function makeWx(wxKey,isTravel){
       if(overload&&overload.suggestedWeight!==parseFloat(lastLog.weight)){
         prevTxt+=' → try '+overload.suggestedWeight+'lb';
       }
-    } else if(e[4]>0) {
+    } else if(e[4]>0){
       prevTxt='Suggested start: '+e[4]+'lb';
     }
 
-    var poPreviewHTML=overload?'<div class="po-preview" id="'+exId+'_po">'+overload.reason+' → <strong>'+overload.suggestedWeight+'lb this session</strong></div>':'';
+    // Plate math — show for barbell exercises in home mode
+    var isBarbell=!isTravel&&isBarbellEx(e[0]);
+    var plateStr=isBarbell&&suggestedWt>0?calcPlates(suggestedWt):null;
+    var platesMeta=plateStr?'<div class="ex-plates">🏋️ '+plateStr+'</div>':'';
+
+    var overloadHTML=overload?'<div class="po-preview" id="'+exId+'_po">'+overload.reason+' → <strong>'+overload.suggestedWeight+'lb this session</strong></div>':'';
+    // Plates preview inside log panel (updates live when weight changes)
+    var platesLogHTML=isBarbell?'<div class="plates-preview" id="'+exId+'_plates_live">🏋️ Loading plate math...</div>':'';
 
     var logPanel='<div class="ex-log'+(logOpen?' open':'')+'" id="'+exId+'_log">'+
-      (overload?poPreviewHTML:'')+
+      (overload?overloadHTML:'')+
+      (isBarbell?platesLogHTML:'')+
       '<div class="log-lbl">How did it feel?</div>'+
       '<div class="feel-row">'+
         '<div class="feel-btn '+(lastLog&&lastLog.feel==='easy'?'sel-easy':'')+'" onclick="setFeel(\''+exId+'\',\'easy\')">&#128170; Too easy</div>'+
@@ -868,7 +847,7 @@ function makeWx(wxKey,isTravel){
       '<div class="log-grid">'+
         '<div class="log-field"><label>Sets</label><input type="number" id="'+exId+'_sets" value="'+(lastLog?lastLog.sets:e[1].replace(/[^0-9]/g,''))+'" inputmode="numeric"></div>'+
         '<div class="log-field"><label>Reps</label><input type="number" id="'+exId+'_reps" value="'+(lastLog?lastLog.reps:(e[2].match(/\d+/)||[''])[0])+'" inputmode="numeric"></div>'+
-        '<div class="log-field"><label>Weight (lb)</label><input type="number" id="'+exId+'_wt" value="'+suggestedWt+'" inputmode="numeric"></div>'+
+        '<div class="log-field"><label>Weight (lb)</label><input type="number" id="'+exId+'_wt" value="'+suggestedWt+'" inputmode="numeric" '+(isBarbell?'oninput="updatePlateLive(\''+exId+'\')"':'')+' ></div>'+
       '</div>'+
       '<button class="log-save" onclick="saveExLog(\''+exId+'\',\''+wxKey+'\',\''+mode+'\','+i+')">Save & mark done</button>'+
     '</div>';
@@ -880,6 +859,7 @@ function makeWx(wxKey,isTravel){
           '<div class="ex-name">'+e[0]+'</div>'+
           (e[3]?'<div class="ex-note">'+e[3]+'</div>':'')+
           (prevTxt?'<div class="ex-prev">'+prevTxt+'</div>':'')+
+          platesMeta+
         '</div>'+
         '<div class="ex-meta">'+
           '<div class="ex-sets">'+e[1]+' × '+shortReps(e[2])+'</div>'+
@@ -895,6 +875,24 @@ function makeWx(wxKey,isTravel){
     '<div class="wx-body'+(wxOpen?' open':'')+'" id="wx-body">'+modeRow+exRows+'</div></div>';
 }
 
+// Live plate math update as user types weight
+function updatePlateLive(exId){
+  var wtEl=document.getElementById(exId+'_wt');
+  var liveEl=document.getElementById(exId+'_plates_live');
+  if(!wtEl||!liveEl)return;
+  var wt=parseFloat(wtEl.value)||0;
+  var p=wt>0?calcPlates(wt):null;
+  liveEl.textContent=p?'🏋️ '+p:'🏋️ Enter weight to see plate math';
+}
+
+// Initialize live plate math when log panel opens
+function initPlateLive(exId,defaultWt){
+  var liveEl=document.getElementById(exId+'_plates_live');
+  if(!liveEl)return;
+  var p=defaultWt>0?calcPlates(defaultWt):null;
+  liveEl.textContent=p?'🏋️ '+p:'🏋️ Enter weight to see plate math';
+}
+
 function toggleWxCard(){
   var k=ck('wx_open');
   if(checks[k])delete checks[k];else checks[k]=true;
@@ -904,15 +902,18 @@ function toggleExLog(exId){
   var k=ck(exId+'_log');
   if(checks[k])delete checks[k];else checks[k]=true;
   save();render();
+  // Init plate live after render
+  setTimeout(function(){
+    var wtEl=document.getElementById(exId+'_wt');
+    if(wtEl)initPlateLive(exId,parseFloat(wtEl.value)||0);
+  },50);
 }
 function setFeel(exId,val){
-  // visually select
   var buttons=document.querySelectorAll('#'+exId+'_log .feel-btn');
   buttons.forEach(function(b){b.classList.remove('sel-easy','sel-good','sel-hard');});
   var map={easy:'sel-easy',good:'sel-good',hard:'sel-hard'};
   var idx={easy:0,good:1,hard:2}[val];
   if(buttons[idx])buttons[idx].classList.add(map[val]);
-  // stash temporarily
   document.getElementById(exId+'_log').setAttribute('data-feel',val);
 }
 
@@ -924,8 +925,7 @@ function saveExLog(exId,wxKey,mode,idx){
   var logId=getExLogKey(wxKey,mode,idx);
   exLog[logId]={sets:sets,reps:reps,weight:wt,feel:feel,date:selDate()};
   checks[ck(exId)]=true;
-  save();
-  render();
+  save();render();
 }
 
 function setDayTravel(isTravel){
@@ -935,7 +935,7 @@ function setDayTravel(isTravel){
   save();render();
 }
 
-// ─── CUSTOM ITEMS ────────────────────────────────────────────────────────────
+// ─── CUSTOM ITEMS ─────────────────────────────────────────────────────────────
 function custActive(c){
   if(!c.hasEndDate)return true;
   var td=selDate();
@@ -967,56 +967,37 @@ function makeCustItem(c,idx){
 }
 function custAtTime(t){return custom.map(function(c,i){return c.time===t?makeCustItem(c,i):'';}).join('');}
 
-// ─── MAIN RENDER ─────────────────────────────────────────────────────────────
+// ─── MAIN RENDER ──────────────────────────────────────────────────────────────
 function render(){
   var day=selDay;
   var cfg=CFG[day];
   var isTravel=isTravelDay(day);
   var isT=cfg.isT;
-  var isH=cfg.isH;
   var isSat=day===6;
   var isMWF=day===1||day===3||day===5;
 
-  // Header styling
   document.getElementById('hdr').classList.toggle('travel',isTravel);
   document.getElementById('hdr-travel').style.display=isTravel?'inline-block':'none';
 
   var out='';
 
-  // TRAVEL BANNER
   if(isTravel){
     out+='<div class="travel-banner">'+
       '<div class="tb-icon">&#9992;</div>'+
-      '<div class="tb-body">'+
-        '<div class="tb-title">Travel mode active</div>'+
-        '<div class="tb-sub">Hotel gym workout + travel meal/recovery guidance. Tap to manage week.</div>'+
-      '</div>'+
-      '<button class="tb-btn" onclick="openPlanner()">Manage</button>'+
-    '</div>';
+      '<div class="tb-body"><div class="tb-title">Travel mode active</div>'+
+      '<div class="tb-sub">Hotel gym workout + travel meal/recovery guidance. Tap to manage week.</div></div>'+
+      '<button class="tb-btn" onclick="openPlanner()">Manage</button></div>';
   }
 
-  // TRAVEL PLAN PROMPT ON SUNDAY — always visible, shows current state
   if(day===0){
     var travelDaysThisWeek=[];
     for(var td=0;td<7;td++)if(travelPlan[td])travelDaysThisWeek.push(DSHORT[td]);
     var pTitle,pSub;
-    if(planWeekKey!==weekKey()){
-      pTitle='Plan your week — travel days?';
-      pSub='Tap to mark any days you\'ll be on the road this week. Takes 20 seconds.';
-    } else if(travelDaysThisWeek.length===0){
-      pTitle='Week plan: all home this week';
-      pSub='Tap to update if travel plans change.';
-    } else {
-      pTitle='Week plan: traveling '+travelDaysThisWeek.join(', ');
-      pSub='Tap to add/remove travel days.';
-    }
-    out+='<div class="plan-prompt" onclick="openPlanner()">'+
-      '<div class="pp-icon">&#9992;</div>'+
-      '<div class="pp-body">'+
-        '<div class="pp-title">'+pTitle+'</div>'+
-        '<div class="pp-sub">'+pSub+'</div>'+
-      '</div>'+
-    '</div>';
+    if(planWeekKey!==weekKey()){pTitle='Plan your week — travel days?';pSub='Tap to mark any days you\'ll be on the road this week. Takes 20 seconds.';}
+    else if(travelDaysThisWeek.length===0){pTitle='Week plan: all home this week';pSub='Tap to update if travel plans change.';}
+    else{pTitle='Week plan: traveling '+travelDaysThisWeek.join(', ');pSub='Tap to add/remove travel days.';}
+    out+='<div class="plan-prompt" onclick="openPlanner()"><div class="pp-icon">&#9992;</div>'+
+      '<div class="pp-body"><div class="pp-title">'+pTitle+'</div><div class="pp-sub">'+pSub+'</div></div></div>';
   }
 
   // ── 8:00 AM SUPPLEMENTS ──
@@ -1031,13 +1012,11 @@ function render(){
   am+=custAtTime('800');
   out+=makeBlock('8:00 am — supplements','',am,'blk_8am');
 
-  // ── B-COMPLEX MWF ──
   if(isMWF){
     var bwk=makeItem('b12','5-MTHF + B12 methylation complex','Rho Nutrition — with breakfast',[{c:'tfreq',t:'Mon/Wed/Fri'}],'Start at lowest dose. If wired, cut to 1x/week.','amber');
     out+=makeBlock('8:00 am — methylation complex','amber',bwk,'blk_b12');
   }
 
-  // ── SATURDAY RX ──
   if(isSat){
     var rx=makeRx('rx0','Tirzepatide 15mg','Weekly — request methylcobalamin compound at Mochi')+
            makeRx('rx1','Testosterone cypionate 0.75ml','Weekly — continue as prescribed')+
@@ -1045,15 +1024,12 @@ function render(){
     out+=makeBlock('Saturday morning — weekly Rx','purple',rx,'blk_rx');
   }
 
-  // ── BREAKFAST ──
   var bfMeal=isTravel?MEALS.bf_travel:(isT?MEALS.bf_t:MEALS.bf_r);
   out+=makeBlock('8:30 am — breakfast','',makeMeal(bfMeal),'blk_bf');
 
-  // ── LUNCH ──
   var lunchMeal=isTravel?MEALS.lunch_travel:(isT?MEALS.lunch_a:MEALS.lunch_r);
   out+=makeBlock('12:30 pm — lunch','',makeMeal(lunchMeal)+custAtTime('1230'),'blk_lunch');
 
-  // ── PRE-WORKOUT ──
   if(isT){
     var pre='';
     pre+=makeItem('beet','Beetroot','2 caps — 45-60 min before 6 pm training',[]);
@@ -1063,84 +1039,79 @@ function render(){
     out+=makeBlock('5:00 pm — pre-workout snack (optional)','amber',makeMeal(MEALS.pre),'blk_snack');
   }
 
-  // ── WORKOUT ──
   if(isT&&cfg.wx){
     out+=makeBlock('6:00 pm — workout'+(isTravel?' (hotel)':''),isTravel?'blue':'amber',makeWx(cfg.wx,isTravel),'blk_wx');
-    if(isH)out+='<div class="warn-box">HIIT day: ice bath / cold shower immediately after — no wait. Most important recovery of the week.</div>';
-  } else if(!isT) {
+  } else if(!isT){
     out+='<div class="tblock"><div class="tpill gray">Rest / flex day</div><div class="rec-card" style="cursor:default">'+chkSVG(false)+'<div class="ibody"><div class="rec-title">No structured workout today</div><div class="idose">Treadmill walk is the only movement obligation. Use this as a true recovery day — critical for Sat/Sun lifting performance.</div></div></div></div>';
   }
 
-  // ── POST-WORKOUT SHAKE ──
   if(isT){
     var shake=isTravel?MEALS.shake_travel:MEALS.shake;
     out+=makeBlock('7:15 pm — post-workout shake','amber',makeMeal(shake),'blk_shake');
   }
 
-  // ── DINNER ──
   var dinMeal=isTravel?MEALS.din_travel:(isT?MEALS.din_t:MEALS.din_r);
   var din=makeMeal(dinMeal)+
     makeItem('colonbroom','Colon Broom','Per label — with a full glass of water',[])+
+    makeItem('curcumin','Liposomal Curcumin + Resveratrol','Rho Nutrition 6mL — before Colon Broom',[{c:'tnew',t:'new'}],'200mg curcuminoids + 75mg trans-resveratrol. Mild blood-thinning — note if surgery scheduled.','teal')+
     custAtTime('1930');
   out+=makeBlock('7:30-8:00 pm — dinner','',din,'blk_din');
 
-  // ── RECOVERY ──
   var rec='';
   if(isTravel){
     rec+=makeRec('tread-t','Treadmill walk — 45-60 min','Zone 2, 3.0-3.5 mph. News + Wheel of Fortune app if available.');
     if(isT){
-      if(isH)rec+=makeRec('coldshower','Cold shower — immediately','3 min as cold as tolerable. HIIT recovery priority.');
-      else rec+=makeRec('coldshower','Cold shower — 30 min after lifting','3 min cold. Alternates with hot for contrast therapy.');
-      rec+=makeRec('hotshower','Hot shower or hotel hot tub','10-15 min heat exposure. Heat shock protein response.');
+      rec+=makeRec('coldshower','Cold shower — after lifting','3 min as cold as tolerable. Contrast therapy if hot tub available.');
+      rec+=makeRec('hotshower','Hotel hot tub or hot shower','10-15 min heat exposure after cold.');
     } else {
-      rec+=makeRec('outdoor-t','Outdoor walk — 30+ min','Natural light for circadian rhythm. Do this instead of pushing harder.');
+      rec+=makeRec('outdoor-t','Outdoor walk — 30+ min','Natural light for circadian rhythm.');
     }
   } else if(day===1){
-    // Monday rest day
     rec+=makeRec('tread','Treadmill — 60 min easy','2.8-3.2 mph. Recovery pace. News + Wheel of Fortune.');
     rec+=makeRec('sauna-r','IR sauna — 25 min at 140°F','Optional but valuable for HRV recovery before Tuesday upper body.');
     rec+=makeRec('mobility','Mobility + foam roll — 10-15 min','Full body. Sets up Tuesday session well.');
   } else if(isT){
     rec+=makeRec('tread','Treadmill — 60 min (before 5 pm)','Zone 2, 3.0-3.5 mph. News + Wheel of Fortune.');
-    if(isH)rec+=makeRec('icebath','Ice bath — immediately post-HIIT','4-5 min at 50-55°F. No wait needed after HIIT.');
-    else rec+=makeRec('icebath','Ice bath — 30 min after lifting','3-5 min. Wait 30 min post-strength to preserve hypertrophy signaling.');
+    rec+=makeRec('icebath','Ice bath — 30 min after lifting','3-5 min. Wait 30 min post-strength to preserve hypertrophy signaling.');
     rec+=makeRec('sauna','IR sauna — 25-30 min at 140°F','After ice bath. Hydrate well.');
   }
   if(rec)out+=makeBlock('Recovery',isTravel?'blue':(isT?'amber':'gray'),rec,'blk_rec');
 
-  // ── SLEEP STACK ──
   var sleep=makeItem('mag','Magnesium glycinate','2 caps (300-400mg elemental)',[])+
     makeItem('cherry','Tart cherry extract','2 caps — melatonin, uric acid, anti-inflammatory',[])+
     makeItem('glycine','Glycine','3g — lowers core body temp',[])+
     custAtTime('2100');
   out+=makeBlock('9:00 pm — sleep stack','purple',sleep,'blk_sleep');
 
-  // ── OTHER CUSTOM ──
   var knownTimes=['800','1230','1700','1930','2100'];
   var otherCust=custom.map(function(c,i){return knownTimes.indexOf(c.time)===-1?makeCustItem(c,i):'';}).join('');
   if(otherCust)out+=makeBlock('Other medications','gray',otherCust,'blk_other');
 
-  // ── ON HOLD ──
-  out+='<div class="warn-box" style="margin-top:6px"><strong>On hold — MD approval first:</strong> Berberine (tirzepatide interaction) | Glutathione (CBS sulfur conflict — sulforaphane above replaces this)</div>';
-
-  // ── ADD BUTTON ──
+  out+='<div style="font-size:11px;color:var(--muted);background:var(--gray);border-radius:10px;padding:10px 12px;margin-top:6px;line-height:1.6"><strong>On hold — MD approval first:</strong> Berberine (tirzepatide interaction) | Glutathione (CBS sulfur conflict — sulforaphane replaces this)</div>';
   out+='<button class="add-btn" onclick="openModal()">+ Add medication or supplement</button>';
 
   document.getElementById('main').innerHTML=out;
 
-  // HEADER
   document.getElementById('hdr-dayname').textContent=DNAMES[day];
   document.getElementById('hdr-type').textContent=cfg.type;
   var d=new Date();d.setDate(d.getDate()+(day-TODAY));
   document.getElementById('hdr-date').textContent=d.toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
 
-  // PROGRESS
   var items=document.querySelectorAll('#main .item:not([style*="cursor:default"]), #main .rec-card:not([style*="cursor:default"]), #main .rx-card, #main .ex-row');
   var done=document.querySelectorAll('#main .item.done, #main .rec-card.done, #main .rx-card.done, #main .ex-row.done');
   var pct=items.length?Math.round(done.length/items.length*100):0;
   document.getElementById('prog-lbl').textContent=done.length+' of '+items.length+' done';
   document.getElementById('prog-fill').style.width=pct+'%';
   document.getElementById('hdr-pct').textContent=pct+'%';
+
+  // Init any open plate previews after render
+  setTimeout(function(){
+    document.querySelectorAll('[id$="_plates_live"]').forEach(function(el){
+      var exId=el.id.replace('_plates_live','');
+      var wtEl=document.getElementById(exId+'_wt');
+      if(wtEl)initPlateLive(exId,parseFloat(wtEl.value)||0);
+    });
+  },50);
 }
 
 function toggleMeal(mid){
@@ -1152,7 +1123,6 @@ function toggleMeal(mid){
   save();
 }
 
-// ─── DAY NAV ─────────────────────────────────────────────────────────────────
 function buildNav(){
   var nav=document.getElementById('daynav');
   nav.innerHTML='';
@@ -1167,12 +1137,9 @@ function buildNav(){
   }
 }
 
-// ─── PAGES ───────────────────────────────────────────────────────────────────
 function showPage(name){
-  var pages=document.querySelectorAll('.page');
-  for(var i=0;i<pages.length;i++)pages[i].classList.remove('active');
-  var nbs=document.querySelectorAll('.nb');
-  for(var i=0;i<nbs.length;i++)nbs[i].classList.remove('active');
+  document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});
+  document.querySelectorAll('.nb').forEach(function(b){b.classList.remove('active');});
   document.getElementById('page-'+name).classList.add('active');
   document.getElementById('nav-'+name).classList.add('active');
   if(name==='progress')updateProgress();
@@ -1188,7 +1155,6 @@ function updateProgress(){
   document.getElementById('milestone-pct').textContent=pBar+'% toward goal';
   document.getElementById('sum-today').textContent=document.getElementById('hdr-pct').textContent;
 
-  // streak
   var streak=0;var dt=new Date();
   for(var i=0;i<60;i++){
     var dk=dt.toISOString().split('T')[0];
@@ -1198,7 +1164,6 @@ function updateProgress(){
   }
   document.getElementById('streak-num').textContent=streak;
 
-  // travel summary
   var travelDays=[];
   for(var d=0;d<7;d++)if(travelPlan[d])travelDays.push(DNAMES[d]);
   var ts=document.getElementById('travel-summary');
@@ -1206,7 +1171,6 @@ function updateProgress(){
   else if(travelDays.length===0){ts.textContent='All home this week — nice.';}
   else{ts.textContent='Traveling: '+travelDays.join(', ');}
 
-  // custom meds
   var actives=custom.filter(custActive);
   var cs=document.getElementById('custom-sum');
   if(actives.length===0){cs.innerHTML='<div style="color:var(--muted);font-size:13px;font-style:italic;padding:8px 0">None active</div>';}
@@ -1217,13 +1181,16 @@ function updateProgress(){
     }).join('');
   }
 
-  // PR summary — last 5 logs across all workouts
   var logs=[];
   for(var key in exLog){
     var parts=key.split('_');
-    var wxKey=parts[0];var mode=parts[1];var idx=parseInt(parts[2]);
-    if(WX[wxKey]&&WX[wxKey][mode]&&WX[wxKey][mode].ex[idx]){
-      logs.push({ex:WX[wxKey][mode].ex[idx][0],log:exLog[key],mode:mode});
+    if(parts[0]==='shared'){
+      logs.push({ex:parts.slice(1).join('_').replace(/_/g,' '),log:exLog[key],mode:'shared'});
+    } else {
+      var wxKey=parts[0];var mode=parts[1];var idx=parseInt(parts[2]);
+      if(WX[wxKey]&&WX[wxKey][mode]&&WX[wxKey][mode].ex[idx]){
+        logs.push({ex:WX[wxKey][mode].ex[idx][0],log:exLog[key],mode:mode});
+      }
     }
   }
   logs.sort(function(a,b){return (b.log.date||'').localeCompare(a.log.date||'');});
@@ -1242,7 +1209,6 @@ function promptWeight(){
   if(w&&!isNaN(w)){weight=parseInt(w);save();updateProgress();}
 }
 
-// ─── MODAL (ADD CUSTOM) ──────────────────────────────────────────────────────
 function openModal(){
   document.getElementById('overlay-add').classList.add('open');
   var now=new Date().toISOString().split('T')[0];
@@ -1261,18 +1227,9 @@ function saveCustom(){
 }
 function delCustom(idx){if(!confirm('Remove this item?'))return;custom.splice(idx,1);save();render();}
 
-// ─── PLANNER MODAL ───────────────────────────────────────────────────────────
-function openPlanner(){
-  renderPlanner();
-  document.getElementById('overlay-planner').classList.add('open');
-}
+function openPlanner(){renderPlanner();document.getElementById('overlay-planner').classList.add('open');}
 function closePlanner(){document.getElementById('overlay-planner').classList.remove('open');}
-function confirmPlan(){
-  planWeekKey=weekKey();
-  save();
-  closePlanner();
-  render();
-}
+function confirmPlan(){planWeekKey=weekKey();save();closePlanner();render();}
 function renderPlanner(){
   var grid=document.getElementById('planner-grid');
   var html='';
@@ -1284,14 +1241,12 @@ function renderPlanner(){
       var mode=locked?'LOCKED HOME':(travel?'TRAVEL':'HOME');
       html+='<div class="plan-day'+(travel?' travel':'')+(locked?' locked':'')+'" onclick="'+(locked?'':'toggleTravel('+d+')')+'">'+
         '<div class="plan-day-name">'+DNAMES[d]+' — '+cfg.type+'</div>'+
-        '<div class="plan-day-mode">'+mode+'</div>'+
-      '</div>';
+        '<div class="plan-day-mode">'+mode+'</div></div>';
     })(i);
   }
   grid.innerHTML=html;
 }
 
-// ─── INIT ────────────────────────────────────────────────────────────────────
 load();
 buildNav();
 render();
