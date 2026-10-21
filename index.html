@@ -549,7 +549,7 @@ var CFG_SHOULDER={
 var WX_SHOULDER={
   sl_lowerA:{
     home:{name:'Lower A — shoulder-safe',sub:'Home — single-leg strength, right-hand loading only',ex:[
-      ['Assault bike warm-up — legs only','1','5 min','Feet on pegs, hands OFF the handles. Easy to moderate.',0],
+      ['Treadmill warm-up','1','5 min','3.3 mph, 3% incline. Hands off rails.',0],
       ['Bodyweight box squat','2','10','Sit back to bench, hands on hips. Slow down, stand tall. Rest 60 sec.',0],
       ['Split squat — DB right hand','3','8 reps per leg','Rear foot flat on floor (not elevated) for weeks 1-2. DB in RIGHT hand only for both legs; left arm relaxed. Rest 90 sec.',15],
       ['Single-leg RDL — DB right hand','3','10 reps per leg','Soft knee, hips back, slow 3 sec lower. Right hand holds DB; left hand free for balance only. Rest 90 sec.',15],
@@ -557,7 +557,7 @@ var WX_SHOULDER={
       ['Box step-up — bodyweight','3','10 reps per leg','Whole foot on box, drive through the heel. Add right-hand DB from week 3. Rest 60 sec.',0],
       ['Single-leg calf raise','3','15 reps per leg','Right hand on the rack for balance. Full stretch, 1 sec pause at top. Rest 45 sec.',0],
       ['Dead bug — arms on floor','3','10 reps per side','Arms rest flat on the floor; legs do the work. Low back pressed down. Rest 45 sec.',0],
-      ['Zone 2 finisher — bike, legs only','1','15 min','Conversational pace. Hands off the handles.',0],
+      ['Zone 2 finisher — incline walk','1','15 min','3.3-3.5 mph at 6-8% incline. Conversational pace, hands off rails.',0],
     ]},
     travel:{name:'Lower A — hotel, shoulder-safe',sub:'Hotel — DB in right hand + bench + treadmill',ex:[
       ['Treadmill warm-up','1','5 min','3.5 mph, 3-5% incline. Hands off rails.',0],
@@ -571,7 +571,7 @@ var WX_SHOULDER={
   },
   sl_core:{
     home:{name:'Core + zone 2',sub:'Home — long zone 2, arm-free core, right-arm work',ex:[
-      ['Zone 2 — assault bike, legs only','1','30 min','Hands off the handles. Conversational pace, roughly 120-130 bpm. Builds to 40 min by week 4.',0],
+      ['Zone 2 — treadmill incline walk','1','30 min','3.3-3.6 mph at 6-10% incline, hands off rails. Conversational pace, roughly 120-130 bpm. Builds to 40 min by week 4.',0],
       ['Dead bug — arms on floor','3','10 reps per side','Low back pressed down, slow legs. Rest 45 sec.',0],
       ['Hollow hold — arms at sides','3','20 sec','Arms stay by your hips. Build to 30 sec. Rest 45 sec.',0],
       ['Side plank — right elbow only','3','20 sec','Right forearm down only. Skip the left side. Build to 40 sec. Rest 45 sec.',0],
@@ -579,8 +579,8 @@ var WX_SHOULDER={
       ['Right-arm DB row — standing','3','10','Staggered stance, no left-hand support on the bench. Right arm only. Rest 60 sec.',20],
       ['Right-arm DB curl','2','12','Right arm only. Training one side helps preserve some strength in the other. Rest 45 sec.',15],
     ]},
-    travel:{name:'Core + zone 2 — hotel',sub:'Hotel — treadmill or bike + floor core',ex:[
-      ['Zone 2 — treadmill incline or bike','1','30 min','Incline walk 3.3-3.6 mph at 6-10%, hands off rails; or upright bike, legs only.',0],
+    travel:{name:'Core + zone 2 — hotel',sub:'Hotel — treadmill + floor core',ex:[
+      ['Zone 2 — treadmill incline walk','1','30 min','3.3-3.6 mph at 6-10% incline, hands off rails.',0],
       ['Dead bug — arms on floor','3','10 reps per side','Rest 45 sec.',0],
       ['Hollow hold — arms at sides','3','20 sec','Rest 45 sec.',0],
       ['Side plank — right elbow only','3','20 sec','Skip the left side. Rest 45 sec.',0],
@@ -589,37 +589,37 @@ var WX_SHOULDER={
     ]},
   },
   sl_cond:{
-    home:{name:'Conditioning intervals',sub:'Home — incline treadmill + legs-only bike',ex:[
+    home:{name:'Conditioning intervals',sub:'Home — incline treadmill intervals + hill surges',ex:[
       ['Treadmill warm-up','1','5 min','3.3 mph, 3% incline. Hands off rails all session.',0],
       ['Treadmill incline intervals','4','2 min on / 90s off','Hard = 8-10% incline at 3.5 mph to start. Weeks 3+: 6 rounds and 10-12%. Easy = flat 3.0 mph.',0],
       ['Easy walk','1','3 min','Flat, easy.',0],
-      ['Assault bike intervals — legs only','6','20s on / 40s off','Hands off handles. Hard = strong but controlled in weeks 1-2. Weeks 3+: 10 rounds, all-out.',0],
-      ['Bike cool-down — legs only','1','5 min','Easy spin.',0],
+      ['Treadmill hill surges','6','1 min on / 1 min off','On = 12-15% incline at 3.5 mph; off = drop to 2% at 3.0 mph. Hands off rails. Weeks 3+: 8 rounds.',0],
+      ['Treadmill cool-down','1','5 min','Flat, easy walk.',0],
       ['Hip flexor stretch — kneeling','2','60 sec per side','Pad under knee, hands on hips. Rest 30 sec.',0],
       ['90/90 hip switch','2','8 reps per side','Seated, hands off the floor if you can. Slow.',0],
     ]},
-    travel:{name:'Conditioning — hotel',sub:'Hotel — treadmill + bike',ex:[
+    travel:{name:'Conditioning — hotel',sub:'Hotel — treadmill',ex:[
       ['Treadmill warm-up','1','5 min','3.3 mph, 3% incline. Hands off rails.',0],
       ['Treadmill incline intervals','4','2 min on / 90s off','Hard = 8-10% at 3.5 mph. Weeks 3+: 6 rounds.',0],
       ['Easy walk','1','3 min','Flat, easy.',0],
-      ['Upright bike intervals — legs only','6','20s on / 40s off','Skip the elliptical (arm handles). Weeks 3+: 10 rounds.',0],
+      ['Treadmill hill surges','6','1 min on / 1 min off','On = 12-15% at 3.5 mph; off = 2% at 3.0 mph. Weeks 3+: 8 rounds.',0],
       ['Hip flexor stretch — kneeling','2','60 sec per side','Rest 30 sec.',0],
     ]},
   },
   sl_power:{
-    home:{name:'Power conditioning',sub:'Home — jumps, bike sprints, right-arm KB, incline finisher',ex:[
-      ['Assault bike warm-up — legs only','1','5 min','Easy, then 3 short pickups. Hands off handles.',0],
+    home:{name:'Power conditioning',sub:'Home — jumps, treadmill power walks, right-arm KB, incline finisher',ex:[
+      ['Treadmill warm-up','1','5 min','3.3 mph, 3% incline, then 3 x 20 sec brisk pickups. Hands off rails.',0],
       ['Box jump','4','3','Low box for weeks 1-2. Land soft, STEP down. Full reset between reps. Rest 90 sec.',0],
-      ['Bike sprints — legs only','6','10s on / 50s off','Hands off handles. Weeks 3+: 8 rounds.',0],
+      ['Treadmill power walk','6','30s on / 90s off','On = 15% incline at 3.6-3.8 mph, drive hard; off = 3% at 3.0 mph. Hands off rails. Weeks 3+: 8 rounds.',0],
       ['Jump squat — hands on hips','3','6','Bodyweight. Quiet landing. Rest 75 sec.',0],
       ['Lateral bound','3','5 reps per side','Stick each landing 1 sec. Arms relaxed, no big arm swing. Rest 75 sec.',0],
       ['Single-arm KB swing — right hand','3','10','Lightest KB. Hip snap, arm passive. Stop if the left shoulder reacts to the motion. Rest 75 sec.',25],
       ['Treadmill incline finisher','3','3 min','12% at 3.3-3.5 mph, hands off rails. 1 min flat walk between.',0],
     ]},
-    travel:{name:'Power conditioning — hotel',sub:'Hotel — jumps + treadmill + bike',ex:[
+    travel:{name:'Power conditioning — hotel',sub:'Hotel — jumps + treadmill',ex:[
       ['Treadmill warm-up','1','5 min','3.5 mph, 3% incline.',0],
       ['Box jump — low bench or step','4','3','Step down. Rest 90 sec.',0],
-      ['Bike sprints — legs only','6','10s on / 50s off','Upright bike. Weeks 3+: 8 rounds.',0],
+      ['Treadmill power walk','6','30s on / 90s off','On = 15% at 3.6-3.8 mph; off = 3% at 3.0 mph. Weeks 3+: 8 rounds.',0],
       ['Jump squat — hands on hips','3','6','Rest 75 sec.',0],
       ['Lateral bound','3','5 reps per side','Stick each landing. Rest 75 sec.',0],
       ['Treadmill incline finisher','3','3 min','12% at 3.3-3.5 mph. 1 min flat between.',0],
@@ -627,7 +627,7 @@ var WX_SHOULDER={
   },
   sl_lowerB:{
     home:{name:'Lower B — shoulder-safe',sub:'Home — hip thrust focus + landmine + carries',ex:[
-      ['Assault bike warm-up — legs only','1','5 min','Hands off handles.',0],
+      ['Treadmill warm-up','1','5 min','3.3 mph, 3% incline. Hands off rails.',0],
       ['Bodyweight reverse lunge','2','8 reps per leg','Warm-up. Hands on hips. Rest 45 sec.',0],
       ['Barbell hip thrust — heavier','4','8','Right hand steadies the bar. Weeks 1-2 stay at RPE 6 (4+ reps left). Rest 2 min.',115],
       ['Landmine reverse lunge — right hand','3','8 reps per leg','Hold the bar end in the RIGHT hand only. Start with the empty bar or one 10 lb plate. Rest 90 sec.',10],
@@ -1191,6 +1191,7 @@ function render(){
   var dinMeal=isTravel?MEALS.din_travel:(isT?MEALS.din_t:MEALS.din_r);
   var din=makeMeal(dinMeal)+
     makeItem('curcumin','Liposomal Curcumin + Resveratrol','Rho Nutrition 6mL — with dinner fat',[{c:'tnew',t:'new'}],'200mg curcuminoids + 75mg trans-resveratrol. Mild blood-thinning — note if surgery scheduled.','teal')+
+    makeItem('belliwelli','BelliWelli Daily Fiber shake','1 serving per label — with dinner, not at bedtime (fewer 3 am bathroom trips)',[{c:'tnew',t:'new'}])+
     custAtTime('1930');
   out+=makeBlock('7:30-8:00 pm — dinner','',din,'blk_din');
 
@@ -1224,8 +1225,7 @@ function render(){
   }
   if(rec)out+=makeBlock('Recovery',isTravel?'blue':(isT?'amber':'gray'),rec,'blk_rec');
 
-  var sleep=makeItem('belliwelli','BelliWelli Daily Fiber shake','1 serving per label — mixed as a shake',[{c:'tnew',t:'new'}])+
-    makeItem('presleep','PreSleep — blue raspberry','1 serving per label',[{c:'tnew',t:'new'}])+
+  var sleep=makeItem('presleep','PreSleep — blue raspberry','1 serving — mix in the least water the label allows',[{c:'tnew',t:'new'}])+
     custAtTime('2100');
   out+=makeBlock('9:00 pm — sleep stack','purple',sleep,'blk_sleep');
 
