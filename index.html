@@ -383,7 +383,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 var DNAMES=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 var DSHORT=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 
-var CFG={
+var CFG_STD={
   0:{type:'Full body strength',  isT:true, isH:false,wx:'fullbody',lockHome:true},
   1:{type:'Rest / flex day',     isT:false,isH:false,wx:null,      lockHome:false},
   2:{type:'Upper body strength', isT:true, isH:false,wx:'upper',   lockHome:false},
@@ -425,7 +425,7 @@ function platesHTML(wt){
 
 // ─── WORKOUTS ─────────────────────────────────────────────────────────────────
 // [name, sets, reps, note, default_weight]
-var WX={
+var WX_STD={
   lower:{
     home:{name:'Lower body strength',sub:'Home — squat rack focus',ex:[
       ['Goblet squat warm-up','2','12','20lb DB at chest. Deep, slow descent (3 sec down). Opens hips for squatting. Rest 60 sec.',20],
@@ -526,6 +526,138 @@ var WX={
     ]},
   },
 };
+
+// ─── SHOULDER-SAFE BLOCK (Oct 2026) ──────────────────────────────────────────
+// Left shoulder: AC joint spurring + greater tuberosity change on x-ray, MRI pending.
+// Rules: no pressing, overhead work, rows/pulling, bar on back, front rack, or two-hand holds.
+// Left arm stays unloaded. Re-entry after 5 weeks off: start light, RPE 6 for weeks 1-2.
+// To return to the standard program after PT clears it: set SHOULDER_BLOCK=false.
+var SHOULDER_BLOCK=true;
+var BLOCK_START='2026-10-22';
+
+var CFG_SHOULDER={
+  0:{type:'Lower A — shoulder-safe', isT:true, isH:false,wx:'sl_lowerA',lockHome:true},
+  1:{type:'Rest + sauna',            isT:false,isH:false,wx:null,       lockHome:false},
+  2:{type:'Core + zone 2',           isT:true, isH:false,wx:'sl_core',  lockHome:false},
+  3:{type:'Conditioning intervals',  isT:true, isH:false,wx:'sl_cond',  lockHome:false},
+  4:{type:'Rest + sauna',            isT:false,isH:false,wx:null,       lockHome:false},
+  5:{type:'Power conditioning',      isT:true, isH:false,wx:'sl_power', lockHome:false},
+  6:{type:'Lower B — shoulder-safe', isT:true, isH:false,wx:'sl_lowerB',lockHome:true},
+};
+
+// [name, sets, reps, note, default_weight] — default weights are re-entry starts
+var WX_SHOULDER={
+  sl_lowerA:{
+    home:{name:'Lower A — shoulder-safe',sub:'Home — single-leg strength, right-hand loading only',ex:[
+      ['Assault bike warm-up — legs only','1','5 min','Feet on pegs, hands OFF the handles. Easy to moderate.',0],
+      ['Bodyweight box squat','2','10','Sit back to bench, hands on hips. Slow down, stand tall. Rest 60 sec.',0],
+      ['Split squat — DB right hand','3','8 reps per leg','Rear foot flat on floor (not elevated) for weeks 1-2. DB in RIGHT hand only for both legs; left arm relaxed. Rest 90 sec.',15],
+      ['Single-leg RDL — DB right hand','3','10 reps per leg','Soft knee, hips back, slow 3 sec lower. Right hand holds DB; left hand free for balance only. Rest 90 sec.',15],
+      ['Barbell hip thrust','3','10','Upper back on bench, pad on bar. Right hand steadies the bar; left hand rests lightly or on the floor. Pause 1 sec at top. Rest 2 min.',95],
+      ['Box step-up — bodyweight','3','10 reps per leg','Whole foot on box, drive through the heel. Add right-hand DB from week 3. Rest 60 sec.',0],
+      ['Single-leg calf raise','3','15 reps per leg','Right hand on the rack for balance. Full stretch, 1 sec pause at top. Rest 45 sec.',0],
+      ['Dead bug — arms on floor','3','10 reps per side','Arms rest flat on the floor; legs do the work. Low back pressed down. Rest 45 sec.',0],
+      ['Zone 2 finisher — bike, legs only','1','15 min','Conversational pace. Hands off the handles.',0],
+    ]},
+    travel:{name:'Lower A — hotel, shoulder-safe',sub:'Hotel — DB in right hand + bench + treadmill',ex:[
+      ['Treadmill warm-up','1','5 min','3.5 mph, 3-5% incline. Hands off rails.',0],
+      ['Split squat — DB right hand','3','8 reps per leg','DB in RIGHT hand only. Left arm relaxed. Rest 90 sec.',15],
+      ['Single-leg RDL — DB right hand','3','10 reps per leg','Slow 3 sec lower. Rest 90 sec.',15],
+      ['Hip thrust — DB on hips','3','12','Upper back on bench. Right hand holds DB on hips. Pause at top. Rest 90 sec.',25],
+      ['Box step-up — bodyweight','3','10 reps per leg','Use the bench. Drive through the heel. Rest 60 sec.',0],
+      ['Dead bug — arms on floor','3','10 reps per side','Arms flat on floor. Rest 45 sec.',0],
+      ['Treadmill zone 2','1','15 min','Incline walk, conversational pace. Hands off rails.',0],
+    ]},
+  },
+  sl_core:{
+    home:{name:'Core + zone 2',sub:'Home — long zone 2, arm-free core, right-arm work',ex:[
+      ['Zone 2 — assault bike, legs only','1','30 min','Hands off the handles. Conversational pace, roughly 120-130 bpm. Builds to 40 min by week 4.',0],
+      ['Dead bug — arms on floor','3','10 reps per side','Low back pressed down, slow legs. Rest 45 sec.',0],
+      ['Hollow hold — arms at sides','3','20 sec','Arms stay by your hips. Build to 30 sec. Rest 45 sec.',0],
+      ['Side plank — right elbow only','3','20 sec','Right forearm down only. Skip the left side. Build to 40 sec. Rest 45 sec.',0],
+      ['Suitcase carry — right hand','4','30 sec','KB or DB in RIGHT hand, walk tall without leaning. Left arm loose. Rest 60 sec.',35],
+      ['Right-arm DB row — standing','3','10','Staggered stance, no left-hand support on the bench. Right arm only. Rest 60 sec.',20],
+      ['Right-arm DB curl','2','12','Right arm only. Training one side helps preserve some strength in the other. Rest 45 sec.',15],
+    ]},
+    travel:{name:'Core + zone 2 — hotel',sub:'Hotel — treadmill or bike + floor core',ex:[
+      ['Zone 2 — treadmill incline or bike','1','30 min','Incline walk 3.3-3.6 mph at 6-10%, hands off rails; or upright bike, legs only.',0],
+      ['Dead bug — arms on floor','3','10 reps per side','Rest 45 sec.',0],
+      ['Hollow hold — arms at sides','3','20 sec','Rest 45 sec.',0],
+      ['Side plank — right elbow only','3','20 sec','Skip the left side. Rest 45 sec.',0],
+      ['Suitcase carry — right hand','4','30 sec','Heaviest comfortable DB, right hand. Rest 60 sec.',35],
+      ['Right-arm DB row — standing','3','10','No left-hand support. Rest 60 sec.',20],
+    ]},
+  },
+  sl_cond:{
+    home:{name:'Conditioning intervals',sub:'Home — incline treadmill + legs-only bike',ex:[
+      ['Treadmill warm-up','1','5 min','3.3 mph, 3% incline. Hands off rails all session.',0],
+      ['Treadmill incline intervals','4','2 min on / 90s off','Hard = 8-10% incline at 3.5 mph to start. Weeks 3+: 6 rounds and 10-12%. Easy = flat 3.0 mph.',0],
+      ['Easy walk','1','3 min','Flat, easy.',0],
+      ['Assault bike intervals — legs only','6','20s on / 40s off','Hands off handles. Hard = strong but controlled in weeks 1-2. Weeks 3+: 10 rounds, all-out.',0],
+      ['Bike cool-down — legs only','1','5 min','Easy spin.',0],
+      ['Hip flexor stretch — kneeling','2','60 sec per side','Pad under knee, hands on hips. Rest 30 sec.',0],
+      ['90/90 hip switch','2','8 reps per side','Seated, hands off the floor if you can. Slow.',0],
+    ]},
+    travel:{name:'Conditioning — hotel',sub:'Hotel — treadmill + bike',ex:[
+      ['Treadmill warm-up','1','5 min','3.3 mph, 3% incline. Hands off rails.',0],
+      ['Treadmill incline intervals','4','2 min on / 90s off','Hard = 8-10% at 3.5 mph. Weeks 3+: 6 rounds.',0],
+      ['Easy walk','1','3 min','Flat, easy.',0],
+      ['Upright bike intervals — legs only','6','20s on / 40s off','Skip the elliptical (arm handles). Weeks 3+: 10 rounds.',0],
+      ['Hip flexor stretch — kneeling','2','60 sec per side','Rest 30 sec.',0],
+    ]},
+  },
+  sl_power:{
+    home:{name:'Power conditioning',sub:'Home — jumps, bike sprints, right-arm KB, incline finisher',ex:[
+      ['Assault bike warm-up — legs only','1','5 min','Easy, then 3 short pickups. Hands off handles.',0],
+      ['Box jump','4','3','Low box for weeks 1-2. Land soft, STEP down. Full reset between reps. Rest 90 sec.',0],
+      ['Bike sprints — legs only','6','10s on / 50s off','Hands off handles. Weeks 3+: 8 rounds.',0],
+      ['Jump squat — hands on hips','3','6','Bodyweight. Quiet landing. Rest 75 sec.',0],
+      ['Lateral bound','3','5 reps per side','Stick each landing 1 sec. Arms relaxed, no big arm swing. Rest 75 sec.',0],
+      ['Single-arm KB swing — right hand','3','10','Lightest KB. Hip snap, arm passive. Stop if the left shoulder reacts to the motion. Rest 75 sec.',25],
+      ['Treadmill incline finisher','3','3 min','12% at 3.3-3.5 mph, hands off rails. 1 min flat walk between.',0],
+    ]},
+    travel:{name:'Power conditioning — hotel',sub:'Hotel — jumps + treadmill + bike',ex:[
+      ['Treadmill warm-up','1','5 min','3.5 mph, 3% incline.',0],
+      ['Box jump — low bench or step','4','3','Step down. Rest 90 sec.',0],
+      ['Bike sprints — legs only','6','10s on / 50s off','Upright bike. Weeks 3+: 8 rounds.',0],
+      ['Jump squat — hands on hips','3','6','Rest 75 sec.',0],
+      ['Lateral bound','3','5 reps per side','Stick each landing. Rest 75 sec.',0],
+      ['Treadmill incline finisher','3','3 min','12% at 3.3-3.5 mph. 1 min flat between.',0],
+    ]},
+  },
+  sl_lowerB:{
+    home:{name:'Lower B — shoulder-safe',sub:'Home — hip thrust focus + landmine + carries',ex:[
+      ['Assault bike warm-up — legs only','1','5 min','Hands off handles.',0],
+      ['Bodyweight reverse lunge','2','8 reps per leg','Warm-up. Hands on hips. Rest 45 sec.',0],
+      ['Barbell hip thrust — heavier','4','8','Right hand steadies the bar. Weeks 1-2 stay at RPE 6 (4+ reps left). Rest 2 min.',115],
+      ['Landmine reverse lunge — right hand','3','8 reps per leg','Hold the bar end in the RIGHT hand only. Start with the empty bar or one 10 lb plate. Rest 90 sec.',10],
+      ['Single-leg glute bridge','3','12 reps per leg','Arms flat on floor. Pause 1 sec at top. Rest 45 sec.',0],
+      ['Lateral step-up','3','10 reps per leg','Low box, bodyweight. Control the lowering. Rest 60 sec.',0],
+      ['Wall sit','3','30 sec','Arms relaxed at sides. Build to 60 sec. Rest 60 sec.',0],
+      ['Suitcase carry — right hand','3','30 sec','Tall posture, no lean. Rest 60 sec.',35],
+      ['Side plank — right elbow only','2','20 sec','Skip the left side. Rest 45 sec.',0],
+    ]},
+    travel:{name:'Lower B — hotel, shoulder-safe',sub:'Hotel — DB in right hand + bench',ex:[
+      ['Treadmill warm-up','1','5 min','3.5 mph, 3-5% incline.',0],
+      ['Hip thrust — DB on hips','4','10','Right hand holds DB. Pause at top. Rest 90 sec.',30],
+      ['Reverse lunge — DB right hand','3','8 reps per leg','DB in RIGHT hand only. Rest 90 sec.',15],
+      ['Single-leg glute bridge','3','12 reps per leg','Arms flat. Rest 45 sec.',0],
+      ['Lateral step-up','3','10 reps per leg','Bench or step. Rest 60 sec.',0],
+      ['Wall sit','3','30 sec','Rest 60 sec.',0],
+      ['Suitcase carry — right hand','3','30 sec','Rest 60 sec.',35],
+    ]},
+  },
+};
+
+var CFG=SHOULDER_BLOCK?CFG_SHOULDER:CFG_STD;
+var WX=SHOULDER_BLOCK?WX_SHOULDER:WX_STD;
+
+function blockWeek(){
+  var s=new Date(BLOCK_START+'T12:00:00');
+  var d=new Date();d.setHours(12,0,0,0);d.setDate(d.getDate()+(selDay-TODAY));
+  var w=Math.floor((d-s)/(7*86400000))+1;
+  return w<1?1:w;
+}
 
 var MEALS={
   bf_t:{time:'8:30 am',title:'Breakfast — ~500 cal / ~45g protein',items:['3 whole eggs scrambled in olive oil (21g protein)','4-5 oz smoked salmon or sardines — rotate daily','1/2 cup overnight oats with cinnamon — cooled for resistant starch (GF oats)','1/2 cup blueberries','1 tsp cod liver oil taken with this meal'],rule:'Protein first, then fat, then carbs. Walk 10-15 min after eating.'},
@@ -753,6 +885,7 @@ function parseRepRange(reps){
 
 function calculateOverload(ex,lastLog){
   if(!lastLog||!lastLog.weight)return null;
+  if(SHOULDER_BLOCK&&blockWeek()<=2)return {suggestedWeight:parseFloat(lastLog.weight)||0,reason:'Re-entry week '+blockWeek()+' — hold weight, RPE 6'};
   var targetReps=parseRepRange(ex[2]);
   var actualReps=parseInt(lastLog.reps)||0;
   var lastWt=parseFloat(lastLog.weight)||0;
@@ -989,6 +1122,15 @@ function render(){
       '<button class="tb-btn" onclick="openPlanner()">Manage</button></div>';
   }
 
+  if(SHOULDER_BLOCK){
+    var bw=blockWeek();
+    out+='<div style="background:var(--redL);border:1px solid var(--redM);border-radius:12px;padding:11px 13px;margin-bottom:12px;font-size:12px;line-height:1.55;color:var(--red)">'+
+      '<div style="font-weight:700;font-size:13px;margin-bottom:3px">Shoulder-safe block — week '+bw+(bw<=2?' (re-entry, RPE 6)':'')+'</div>'+
+      'Until the MRI and PT plan: no pressing, overhead work, rows or pulling, bar on back, front rack, or two-hand holds. Left arm stays unloaded. Golf is on hold. '+
+      '<strong>If anything brings on shoulder or forearm pain, stop and skip it.</strong> Weeks 1-2 hold the starting weights; progress from week 3.'+
+      '</div>';
+  }
+
   if(day===0){
     var travelDaysThisWeek=[];
     for(var td=0;td<7;td++)if(travelPlan[td])travelDaysThisWeek.push(DSHORT[td]);
@@ -1066,6 +1208,16 @@ function render(){
     } else {
       rec+=makeRec('outdoor-t','Outdoor walk — 30+ min','Natural light for circadian rhythm.');
     }
+  } else if(SHOULDER_BLOCK){
+    if(isT){
+      rec+=makeRec('tread','Treadmill — 60 min (before 5 pm)','Zone 2, 3.0-3.5 mph. News + Wheel of Fortune. Hands off rails; normal relaxed arm swing is fine.');
+      rec+=makeRec('sauna','IR sauna — 30-35 min at 140°F','After the post-workout shake, before dinner. Cold plunge paused for winter — no cold needed after training.');
+    } else {
+      rec+=makeRec('tread','Treadmill — 60 min easy','2.8-3.2 mph. Recovery pace. News + Wheel of Fortune.');
+      rec+=makeRec('sauna-r','IR sauna — 30-35 min at 140°F','Rest-day session. Aim for 5-6 sauna sessions a week while lifting is limited.');
+      rec+=makeRec('mobility','Mobility — 10-15 min, lower body + left arm easy motion','Hips, hamstrings, calves, foam roll legs. Move the left arm through its pain-free range only — no stretching into pain, no loading.');
+    }
+    rec+=makeRec('sauna-h2o','Sauna hydration — 16-24 oz water','Drink before and after. Tirzepatide blunts thirst, so drink on schedule. LMNT only after a heavy sweat (sodium — NPPA).');
   } else if(day===1){
     rec+=makeRec('tread','Treadmill — 60 min easy','2.8-3.2 mph. Recovery pace. News + Wheel of Fortune.');
     rec+=makeRec('sauna-r','IR sauna — 25 min at 140°F','Optional but valuable for HRV recovery before Tuesday upper body.');
