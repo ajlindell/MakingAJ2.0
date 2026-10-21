@@ -660,8 +660,8 @@ function blockWeek(){
 }
 
 var MEALS={
-  bf_t:{time:'8:30 am',title:'Breakfast — ~500 cal / ~45g protein',items:['3 whole eggs scrambled in olive oil (21g protein)','4-5 oz smoked salmon or sardines — rotate daily','1/2 cup overnight oats with cinnamon — cooled for resistant starch (GF oats)','1/2 cup blueberries','1 tsp cod liver oil taken with this meal'],rule:'Protein first, then fat, then carbs. Walk 10-15 min after eating.'},
-  bf_r:{time:'8:30 am',title:'Breakfast — ~450 cal / ~40g protein',items:['3 whole eggs scrambled in olive oil','4 oz smoked salmon or sardines','1/2 cup overnight oats (cooled) with cinnamon + blueberries','1 tsp cod liver oil'],rule:'Rest day — slightly lighter. Protein still comes first.'},
+  bf_t:{time:'8:30 am',title:'Breakfast — ~500 cal / ~45g protein',items:['3 whole eggs scrambled in olive oil (21g protein)','4-5 oz smoked salmon or sardines — rotate daily','1/2 cup overnight oats with cinnamon — cooled for resistant starch (GF oats)','1/2 cup blueberries'],rule:'Protein first, then fat, then carbs. Walk 10-15 min after eating.'},
+  bf_r:{time:'8:30 am',title:'Breakfast — ~450 cal / ~40g protein',items:['3 whole eggs scrambled in olive oil','4 oz smoked salmon or sardines','1/2 cup overnight oats (cooled) with cinnamon + blueberries'],rule:'Rest day — slightly lighter. Protein still comes first.'},
   bf_travel:{time:'Breakfast — travel',title:'Hotel breakfast strategy — ~500 cal / ~45g protein',items:['Priority: scrambled eggs (3-4) + smoked salmon if at hotel buffet','Avoid: pastries, waffles, sugary yogurts, hotel pancakes','Backup: protein shake (2 scoops whey isolate + water or almond milk)','Berries or small bowl of GF oats if available','Skip bacon/sausage — keep saturated fat low (APOE4 + ACE)'],rule:'Hotel breakfast is a landmine for your genetics. Default to eggs + salmon + fruit. Everything else skip.'},
   lunch_a:{time:'12:30 pm',title:'Lunch — ~650 cal / ~55g protein (largest meal)',items:['6-7 oz grilled chicken or salmon','3/4 cup lentils or black beans — cooled and reheated','Large mixed greens salad: spinach, arugula, cucumber','1/2 avocado','1/2 cup broccoli or broccoli sprouts','Olive oil + lemon dressing only','16 oz water minimum'],rule:'Largest meal. Protein first. Cool and reheat legumes for resistant starch.'},
   lunch_r:{time:'12:30 pm',title:'Lunch — ~600 cal / ~50g protein',items:['6 oz chicken or salmon','3/4 cup lentils or black beans (cooled + reheated)','Large salad + olive oil + lemon + 1/2 avocado','1/2 cup broccoli sprouts'],rule:'Rest day — reduce carbs ~30-40g. Protein stays the same.'},
@@ -1146,11 +1146,9 @@ function render(){
   var am='';
   am+=makeItem('omega3','Omega-3','2 caps — with fat-containing food',[]);
   am+=makeItem('vitd','Vitamin D3 + K2','2,000-4,000 IU D3 + 100mcg MK-7 K2',[{c:'tnew',t:'new'}]);
-  am+=makeItem('clo','Cod liver oil','1 tsp — Vitamin A, omega-3, natural D3',[{c:'tnew',t:'new'}]);
   am+=makeItem('nad','Liposomal NAD+','Per label — morning only',[{c:'tnew',t:'new'}]);
-  am+=makeItem('tmg','TMG (trimethylglycine)','Per label — methyl donor, morning only',[{c:'tnew',t:'new'}]);
+  am+=makeItem('morningwould','Morning Would','1 serving — creatine 5g, Alpha-GPC 300mg, betaine 2g, L-citrulline 9g, L-tyrosine 2.5g',[{c:'tnew',t:'new'}],'Replaces standalone creatine, beetroot, and TMG. Alpha-GPC cycle: 10 weeks on / 3 weeks off. Watch tyrosine response (COMT A/A).','teal');
   am+=makeItem('sulfo','Sulforaphane 20mg','Double Wood — must contain myrosinase',[{c:'tnew',t:'new'}]);
-  am+=makeItem('lmnt','LMNT electrolytes','1 packet — dilute 50/50 if BP elevated',[]);
   am+=custAtTime('800');
   out+=makeBlock('8:00 am — supplements','',am,'blk_8am');
 
@@ -1174,10 +1172,8 @@ function render(){
 
   if(isT){
     var pre='';
-    pre+=makeItem('beet','Beetroot','2 caps — 45-60 min before 6 pm training',[]);
-    pre+=makeItem('creat','Creatine','3-5g with water — drink extra water',[]);
     pre+=custAtTime('1700');
-    out+=makeBlock('5:00 pm — pre-workout supplements','amber',pre,'blk_pre');
+    if(pre)out+=makeBlock('5:00 pm — pre-workout supplements','amber',pre,'blk_pre');
     out+=makeBlock('5:00 pm — pre-workout snack (optional)','amber',makeMeal(MEALS.pre),'blk_snack');
   }
 
@@ -1194,8 +1190,7 @@ function render(){
 
   var dinMeal=isTravel?MEALS.din_travel:(isT?MEALS.din_t:MEALS.din_r);
   var din=makeMeal(dinMeal)+
-    makeItem('colonbroom','Colon Broom','Per label — with a full glass of water',[])+
-    makeItem('curcumin','Liposomal Curcumin + Resveratrol','Rho Nutrition 6mL — before Colon Broom',[{c:'tnew',t:'new'}],'200mg curcuminoids + 75mg trans-resveratrol. Mild blood-thinning — note if surgery scheduled.','teal')+
+    makeItem('curcumin','Liposomal Curcumin + Resveratrol','Rho Nutrition 6mL — with dinner fat',[{c:'tnew',t:'new'}],'200mg curcuminoids + 75mg trans-resveratrol. Mild blood-thinning — note if surgery scheduled.','teal')+
     custAtTime('1930');
   out+=makeBlock('7:30-8:00 pm — dinner','',din,'blk_din');
 
@@ -1217,7 +1212,7 @@ function render(){
       rec+=makeRec('sauna-r','IR sauna — 30-35 min at 140°F','Rest-day session. Aim for 5-6 sauna sessions a week while lifting is limited.');
       rec+=makeRec('mobility','Mobility — 10-15 min, lower body + left arm easy motion','Hips, hamstrings, calves, foam roll legs. Move the left arm through its pain-free range only — no stretching into pain, no loading.');
     }
-    rec+=makeRec('sauna-h2o','Sauna hydration — 16-24 oz water','Drink before and after. Tirzepatide blunts thirst, so drink on schedule. LMNT only after a heavy sweat (sodium — NPPA).');
+    rec+=makeRec('sauna-h2o','Sauna hydration — 16-24 oz water','Drink before and after. Tirzepatide blunts thirst, so drink on schedule. Plain water — no high-sodium electrolyte mixes (NPPA).');
   } else if(day===1){
     rec+=makeRec('tread','Treadmill — 60 min easy','2.8-3.2 mph. Recovery pace. News + Wheel of Fortune.');
     rec+=makeRec('sauna-r','IR sauna — 25 min at 140°F','Optional but valuable for HRV recovery before Tuesday upper body.');
@@ -1229,9 +1224,8 @@ function render(){
   }
   if(rec)out+=makeBlock('Recovery',isTravel?'blue':(isT?'amber':'gray'),rec,'blk_rec');
 
-  var sleep=makeItem('mag','Magnesium glycinate','2 caps (300-400mg elemental)',[])+
-    makeItem('cherry','Tart cherry extract','2 caps — melatonin, uric acid, anti-inflammatory',[])+
-    makeItem('glycine','Glycine','3g — lowers core body temp',[])+
+  var sleep=makeItem('belliwelli','BelliWelli Daily Fiber shake','1 serving per label — mixed as a shake',[{c:'tnew',t:'new'}])+
+    makeItem('presleep','PreSleep — blue raspberry','1 serving per label',[{c:'tnew',t:'new'}])+
     custAtTime('2100');
   out+=makeBlock('9:00 pm — sleep stack','purple',sleep,'blk_sleep');
 
