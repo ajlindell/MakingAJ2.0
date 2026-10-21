@@ -675,7 +675,7 @@ var MEALS={
   shake:{time:'7:15 pm',title:'Post-workout shake — ~390 cal / ~50g protein',items:['2 scoops whey isolate (~50g protein)','1/2 cup frozen blueberries + 1 handful baby spinach','8-10 oz unsweetened almond milk','1/2 small frozen banana + 1 tsp chia + 1/4 tsp cinnamon'],rule:'Within 20-30 min of finishing training. Non-negotiable anabolic window.'},
   shake_travel:{time:'7:15 pm',title:'Post-workout shake — travel version',items:['2 scoops whey isolate + water or almond milk (if available)','Pack in a shaker bottle — easiest travel supplement','Skip the frozen fruit additions on the road — just the protein'],rule:'Bring single-serving whey packets or a travel shaker bottle in your carry-on.'},
   din_t:{time:'7:45 pm',title:'Dinner — ~475 cal / ~40g protein',items:['5-6 oz baked salmon or skinless chicken thigh','2 cups roasted vegetables in olive oil + garlic','1/2 cup sweet potato (cooled then reheated) or 1/3 cup brown rice'],rule:'Kitchen closes 8:30 pm. Herbal tea only after (chamomile, passionflower, lemon balm).'},
-  din_r:{time:'7:00 pm',title:'Dinner — ~450 cal / ~40g protein',items:['5 oz salmon or chicken + 2 cups roasted vegetables','Small portion sweet potato or skip carbs'],rule:'No post-workout shake today. Kitchen closes 8:30 pm.'},
+  din_r:{time:'7:00 pm',title:'Dinner — ~450 cal / ~40g protein',items:['5 oz salmon or chicken + 2 cups roasted vegetables','Small portion sweet potato or skip carbs'],rule:'Kitchen closes 8:30 pm.'},
   din_travel:{time:'7:30 pm',title:'Dinner — travel strategy',items:['Best options: grilled salmon, steak (lean cut), chicken breast','Sides: double vegetables, sweet potato if on menu, skip bread basket','Avoid: pasta, risotto, creamy sauces, heavy fried foods','Drinks: water with lemon. Skip alcohol within 3 hrs of sleep','Ask for vegetables cooked in olive oil, not butter (APOE4 + ACE)'],rule:'Most hotel restaurants can accommodate protein + veg + olive oil. Ask.'},
 };
 
@@ -1183,15 +1183,11 @@ function render(){
   }
 
   if(isT&&cfg.wx){
-    out+=makeBlock('6:00 pm — workout'+(isTravel?' (hotel)':''),isTravel?'blue':'amber',makeWx(cfg.wx,isTravel),'blk_wx');
+    out+=makeBlock('6:00 pm — '+(SHOULDER_BLOCK&&!isTravel?'walk + workout':'workout')+(isTravel?' (hotel)':''),isTravel?'blue':'amber',makeWx(cfg.wx,isTravel),'blk_wx');
   } else if(!isT){
     out+='<div class="tblock"><div class="tpill gray">Rest / flex day</div><div class="rec-card" style="cursor:default">'+chkSVG(false)+'<div class="ibody"><div class="rec-title">No structured workout today</div><div class="idose">Treadmill walk is the only movement obligation. Use this as a true recovery day — critical for Sat/Sun lifting performance.</div></div></div></div>';
   }
 
-  if(isT){
-    var shake=isTravel?MEALS.shake_travel:MEALS.shake;
-    out+=makeBlock('7:15 pm — post-workout shake','amber',makeMeal(shake),'blk_shake');
-  }
 
   var dinMeal=isTravel?MEALS.din_travel:(isT?MEALS.din_t:MEALS.din_r);
   var din=makeMeal(dinMeal)+
@@ -1212,8 +1208,8 @@ function render(){
   } else if(SHOULDER_BLOCK){
     if(isT){
       var sm=sessionTreadMin(cfg.wx),top=Math.max(60-sm,0);
-      rec+=makeRec('tread','Treadmill walk — '+top+' min to reach 60','Today\'s workout already has ~'+sm+' min on the treadmill, which counts toward your 60. Easiest: walk the '+top+' min straight into the warm-up or out of the cool-down. 3.0-3.5 mph, news + Wheel of Fortune, hands off rails.');
-      rec+=makeRec('sauna','IR sauna — 30-35 min at 140°F','After the post-workout shake, before dinner. Cold plunge paused for winter — no cold needed after training.');
+      rec+=makeRec('tread','6:00 pm treadmill walk — '+top+' min','Starts the 6:00 block with the news; Wheel of Fortune at 6:30. Roll straight into the workout\'s treadmill warm-up — its ~'+sm+' min on the treadmill completes your 60. 3.0-3.5 mph, hands off rails.');
+      rec+=makeRec('sauna','IR sauna — 30-35 min at 140°F','After the session, before dinner. Cold plunge paused for winter — no cold needed after training.');
     } else {
       rec+=makeRec('tread','Treadmill — 60 min easy','2.8-3.2 mph. Recovery pace. News + Wheel of Fortune.');
       rec+=makeRec('sauna-r','IR sauna — 30-35 min at 140°F','Rest-day session. Aim for 5-6 sauna sessions a week while lifting is limited.');
